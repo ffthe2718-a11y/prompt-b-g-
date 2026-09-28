@@ -1,0 +1,8 @@
+{
+  "name": "Aurelia Luxe Studio",
+  "description": "Premium luxury hair salon portal in Mumbai. Book appointments, explore traditional services like Champi and Bridal Mehndi, and manage your grooming profile.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

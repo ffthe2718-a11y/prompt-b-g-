@@ -1,0 +1,149 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user information and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["User", "Vendor_Admin", "Admin", "Owner"], "description": "User role" },
+        "shopId": { "type": "string", "description": "ID of the shop owned by this user" },
+        "shopSlug": { "type": "string", "description": "Slug of the shop owned by this user" },
+        "emailReminders": { "type": "boolean", "description": "Whether the user wants email reminders" },
+        "smsReminders": { "type": "boolean", "description": "Whether the user wants SMS reminders" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Shop": {
+      "title": "Shop",
+      "description": "Stores shop landing page configuration and details.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "latitude": { "type": "number", "description": "Decimal latitude for proximity search" },
+        "longitude": { "type": "number", "description": "Decimal longitude for proximity search" },
+        "rating": { "type": "number", "description": "Average user rating (0-5)" },
+        "ratingCount": { "type": "number", "description": "Total number of ratings" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "logo": { "type": "string", "format": "uri" },
+        "instagramHandle": { "type": "string" },
+        "facebookHandle": { "type": "string" },
+        "twitterHandle": { "type": "string" },
+        "upiId": { "type": "string", "description": "UPI ID for payments" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "isActive": { "type": "boolean", "default": false, "description": "Master admin approval status" },
+        "isVerified": { "type": "boolean", "default": false, "description": "Verification badge status" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "name", "slug", "status"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Stores services linked to shops.",
+      "type": "object",
+      "properties": {
+        "shopId": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["shopId", "name", "price"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Stores customer booking details.",
+      "type": "object",
+      "properties": {
+        "shopId": { "type": "string", "description": "ID of the shop booked" },
+        "userId": { "type": "string", "description": "UID of the user who made the booking" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "service": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "time": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "isRecurring": { "type": "boolean" },
+        "frequency": { "type": "string" },
+        "duration": { "type": "string" },
+        "stylist": { "type": "string", "description": "Preferred or assigned stylist/staff member" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["shopId", "name", "userId", "service", "date", "time"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Stores contact form submissions.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "subject", "message", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Stores user reviews and star ratings for individual shops.",
+      "type": "object",
+      "properties": {
+        "shopId": { "type": "string", "description": "ID of the reviewed shop" },
+        "userId": { "type": "string", "description": "UID of reviewer" },
+        "userName": { "type": "string", "description": "Name of reviewer" },
+        "userPhoto": { "type": "string", "description": "Avatar of reviewer" },
+        "rating": { "type": "number", "description": "Star rating from 1 to 5" },
+        "title": { "type": "string", "description": "Review headline" },
+        "comment": { "type": "string", "description": "Review details" },
+        "service": { "type": "string", "description": "Service received during appointment" },
+        "appointmentId": { "type": "string", "description": "Optional linked appointment ID" },
+        "verifiedBooking": { "type": "boolean", "description": "Whether reviewer had confirmed appointment" },
+        "recommend": { "type": "boolean", "description": "Whether user recommends shop" },
+        "helpfulCount": { "type": "number", "description": "Count of helpful votes" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["shopId", "userId", "userName", "rating", "title", "comment"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profile documents"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Customer documents"
+    },
+    "/shops/{shopId}": {
+      "schema": "Shop",
+      "description": "Shop landing page documents"
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Custom services added by vendors"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Contact form submissions"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Reviews and star ratings for individual shops"
+    }
+  }
+}
+
