@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { UserPlus, LogIn, Users, CreditCard, Droplets, Phone, MapPin, Info, MessageCircle, Calendar as CalendarIcon, Clock, Repeat, Loader2, Check, Store, Mail, Bell, BellRing, Scissors, Sparkles } from "lucide-react";
+import { UserPlus, LogIn, Users, CreditCard, Droplets, Phone, MapPin, Info, MessageCircle, Calendar as CalendarIcon, Clock, Repeat, Loader2, Check, Store, Mail, Bell, BellRing, Scissors, Sparkles, Tag, Gift, Percent } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -21,6 +21,7 @@ import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_STYLISTS, StylistMember } from "@/types/stylist";
+import { SEASONAL_PROMOTIONS } from "@/data/promotions";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,9 @@ export default function Book() {
   const navigate = useNavigate();
   const shopId = searchParams.get("shopId");
   const stylistParam = searchParams.get("stylist");
+  const serviceParam = searchParams.get("service");
+  const promoParam = searchParams.get("promo");
+
   const { user, profile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dynamicServices, setDynamicServices] = useState<any[]>([]);
@@ -43,11 +47,36 @@ export default function Book() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastBooking, setLastBooking] = useState<any | null>(null);
 
+  const [promoCodeInput, setPromoCodeInput] = useState<string>(promoParam || "");
+  const [appliedPromotion, setAppliedPromotion] = useState<any | null>(null);
+  const [showPromoInput, setShowPromoInput] = useState<boolean>(!!promoParam);
+
   useEffect(() => {
     if (stylistParam) {
       setSelectedStylist(stylistParam);
     }
   }, [stylistParam]);
+
+  useEffect(() => {
+    if (serviceParam) {
+      setFormData(prev => ({ ...prev, service: serviceParam }));
+    }
+  }, [serviceParam]);
+
+  useEffect(() => {
+    const code = promoParam || promoCodeInput;
+    if (code) {
+      const match = SEASONAL_PROMOTIONS.find(
+        p => p.promoCode.toLowerCase() === code.trim().toLowerCase()
+      );
+      if (match) {
+        setAppliedPromotion(match);
+        if (!formData.service || (serviceParam && formData.service === serviceParam)) {
+          setFormData(prev => ({ ...prev, service: match.title }));
+        }
+      }
+    }
+  }, [promoParam]);
 
   useEffect(() => {
     if (shopId) {
@@ -83,7 +112,22 @@ export default function Book() {
     return () => unsubscribe();
   }, []);
 
-  const allServices = [...SALON_SERVICES, ...dynamicServices];
+  // Format seasonal promotions as selectable services
+  const promotionalServices = React.useMemo(() => {
+    return SEASONAL_PROMOTIONS.map(p => ({
+      name: p.title,
+      price: p.discountedPrice,
+      originalPrice: p.originalPrice,
+      duration: p.durationText,
+      description: `${p.subtitle} (Bonus: ${p.exclusivePerk})`,
+      category: "Seasonal Offer",
+      isPromotional: true,
+      promoCode: p.promoCode,
+      discountPercentage: p.discountPercentage
+    }));
+  }, []);
+
+  const allServices = [...promotionalServices, ...SALON_SERVICES, ...dynamicServices];
 
   const availableStylists: StylistMember[] = 
     selectedShop?.content?.stylists && selectedShop.content.stylists.length > 0
@@ -152,6 +196,10 @@ export default function Book() {
             ...formData,
             stylist: selectedStylist || "Any Available Specialist",
             shopId: shopId || "aurelia-luxe-main",
+            promoCode: appliedPromotion?.promoCode || null,
+            promotionalOffer: appliedPromotion?.title || null,
+            discountPercentage: appliedPromotion?.discountPercentage || null,
+            finalPrice: appliedPromotion?.discountedPrice || null,
             date: currentDate.toISOString(),
             seriesId,
             userId: user.uid,
@@ -176,6 +224,10 @@ export default function Book() {
           ...formData,
           stylist: selectedStylist || "Any Available Specialist",
           shopId: shopId || "aurelia-luxe-main",
+          promoCode: appliedPromotion?.promoCode || null,
+          promotionalOffer: appliedPromotion?.title || null,
+          discountPercentage: appliedPromotion?.discountPercentage || null,
+          finalPrice: appliedPromotion?.discountedPrice || null,
           date: startDate.toISOString(),
           userId: user.uid,
           userName: user.displayName,
@@ -193,6 +245,10 @@ export default function Book() {
       setLastBooking({
         ...formData,
         stylist: selectedStylist || "Any Available Specialist",
+        promoCode: appliedPromotion?.promoCode || null,
+        promotionalOffer: appliedPromotion?.title || null,
+        discountPercentage: appliedPromotion?.discountPercentage || null,
+        finalPrice: appliedPromotion?.discountedPrice || null,
         date: startDate, // Pass Date object
         count: appointmentsToCreate.length
       });
@@ -531,6 +587,103 @@ export default function Book() {
                     </TooltipProvider>
                   </SelectContent>
                 </Select>
+
+                {/* Active Promotional Offer Banner */}
+                {appliedPromotion && (
+                  <div className="p-4 rounded-xl border border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent relative overflow-hidden text-xs space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5 animate-pulse" />
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-sm">{appliedPromotion.title}</span>
+                            <span className="text-[10px] font-mono font-bold text-primary bg-black/60 px-2 py-0.5 rounded border border-primary/30">
+                              {appliedPromotion.promoCode}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                              Save {appliedPromotion.discountPercentage}%
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-zinc-300 mt-1">
+                            Festive Package Rate: <strong className="text-primary font-serif text-sm">₹{appliedPromotion.discountedPrice.toLocaleString("en-IN")}</strong>{" "}
+                            <span className="line-through text-zinc-500 text-[10px]">₹{appliedPromotion.originalPrice.toLocaleString("en-IN")}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAppliedPromotion(null)}
+                        className="h-6 text-[10px] text-zinc-400 hover:text-white px-2"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                    {appliedPromotion.exclusivePerk && (
+                      <div className="flex items-center gap-2 text-[11px] text-amber-300/90 pt-1 border-t border-primary/20">
+                        <Gift className="h-3.5 w-3.5 shrink-0" />
+                        <span>{appliedPromotion.exclusivePerk}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Promo Code Input Trigger / Field */}
+                {!appliedPromotion && (
+                  <div className="pt-1">
+                    {!showPromoInput ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowPromoInput(true)}
+                        className="text-xs text-primary hover:underline flex items-center gap-1.5 font-medium"
+                      >
+                        <Tag className="h-3 w-3" />
+                        <span>Have a festive or bridal promo code?</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="e.g. ROYALBRIDE25, FESTIVEGLOW"
+                          value={promoCodeInput}
+                          onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                          className="h-9 text-xs font-mono uppercase bg-background border-border"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            if (!promoCodeInput.trim()) return;
+                            const match = SEASONAL_PROMOTIONS.find(
+                              p => p.promoCode.toLowerCase() === promoCodeInput.trim().toLowerCase()
+                            );
+                            if (match) {
+                              setAppliedPromotion(match);
+                              setFormData(prev => ({ ...prev, service: match.title }));
+                              toast.success(`Promo code "${match.promoCode}" applied!`, {
+                                description: `${match.discountPercentage}% savings on ${match.title}`
+                              });
+                            } else {
+                              toast.error(`Invalid promo code: "${promoCodeInput}".`);
+                            }
+                          }}
+                          className="h-9 px-4 text-xs font-bold uppercase bg-primary text-black hover:bg-primary/90"
+                        >
+                          Apply
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowPromoInput(false)}
+                          className="h-9 px-2 text-zinc-400"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -843,6 +996,12 @@ export default function Book() {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Stylist / Specialist</span>
                 <span className="font-semibold text-primary">{lastBooking.stylist}</span>
+              </div>
+            )}
+            {lastBooking?.promoCode && (
+              <div className="flex justify-between items-center text-sm py-1 border-t border-border/50">
+                <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Applied Promotion</span>
+                <span className="font-semibold text-emerald-400 font-mono text-xs">{lastBooking.promoCode} ({lastBooking.discountPercentage}% Off)</span>
               </div>
             )}
             <div className="flex justify-between items-center text-sm">

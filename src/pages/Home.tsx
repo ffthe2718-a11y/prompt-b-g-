@@ -8,19 +8,43 @@ import { useI18n } from "@/context/I18nContext";
 import { cn } from "@/lib/utils";
 import { db } from "@/firebase";
 import { collection, query, where, limit, getDocs } from "firebase/firestore";
+import SeasonalPromotionsCarousel from "@/components/SeasonalPromotionsCarousel";
+import { CURATED_SHOPS } from "@/data/curatedShops";
 
 export default function Home() {
   const { t } = useI18n();
-  const [featuredShops, setFeaturedShops] = useState<any[]>([]);
+  const [featuredShops, setFeaturedShops] = useState<any[]>(CURATED_SHOPS.slice(0, 3));
+  const [isLoadingShops, setIsLoadingShops] = useState(false);
   const containerRef = useRef(null);
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 800], [0, 250]);
 
   useEffect(() => {
     const fetchShops = async () => {
-      const q = query(collection(db, "shops"), where("isActive", "==", true), limit(3));
-      const snap = await getDocs(q);
-      setFeaturedShops(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const q = query(collection(db, "shops"), limit(6));
+        const snap = await getDocs(q);
+        const firestoreShops = snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter((s: any) => s.isActive !== false && s.status !== "archived");
+
+        if (firestoreShops.length > 0) {
+          const combined = [...firestoreShops];
+          for (const curated of CURATED_SHOPS) {
+            if (combined.length < 3 && !combined.some((s: any) => s.slug === curated.slug)) {
+              combined.push(curated);
+            }
+          }
+          setFeaturedShops(combined.slice(0, 3));
+        } else {
+          setFeaturedShops(CURATED_SHOPS.slice(0, 3));
+        }
+      } catch (error) {
+        console.warn("Using curated shops:", error);
+        setFeaturedShops(CURATED_SHOPS.slice(0, 3));
+      } finally {
+        setIsLoadingShops(false);
+      }
     };
     fetchShops();
   }, []);
@@ -77,61 +101,109 @@ export default function Home() {
       </section>
 
       {/* Stats/Independent Shops */}
-      <section className="md:col-span-2 md:row-span-2 rounded-[16px] border border-border bg-card p-8 flex flex-col justify-center">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1">Curation</span>
-            <h2 className="text-2xl font-serif text-foreground">Featured <span className="italic text-primary">Shops</span></h2>
+      <section className="md:col-span-2 md:row-span-2 rounded-[16px] border border-border bg-card p-6 md:p-8 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1">
+                Curated Artisans
+              </span>
+              <h2 className="text-2xl font-serif text-foreground">
+                Featured <span className="italic text-primary">Shops</span>
+              </h2>
+            </div>
+            <Button asChild variant="link" className="text-primary text-[10px] uppercase tracking-widest p-0 h-auto hover:text-primary/80">
+              <Link to="/marketplace" className="flex items-center gap-1.5 font-semibold">
+                Explore All <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </div>
-          <Button asChild variant="link" className="text-primary text-[10px] uppercase tracking-widest p-0 h-auto">
-            <Link to="/marketplace" className="flex items-center gap-1">
-              View All <ArrowRight className="h-3 w-3" />
-            </Link>
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4">
-          {featuredShops.length === 0 ? (
-            [1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-4 p-4 rounded-xl border border-border/50 animate-pulse">
-                <div className="h-12 w-12 rounded-lg bg-zinc-900 shrink-0" />
-                <div className="flex-grow space-y-2">
-                  <div className="h-4 w-32 bg-zinc-900 rounded" />
-                  <div className="h-3 w-20 bg-zinc-900 rounded" />
+
+          <div className="grid grid-cols-1 gap-3.5">
+            {isLoadingShops ? (
+              [1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-4 p-3.5 rounded-xl border border-border/50 animate-pulse bg-background/50">
+                  <div className="h-14 w-14 rounded-lg bg-zinc-800 shrink-0" />
+                  <div className="flex-grow space-y-2 py-1">
+                    <div className="h-4 w-36 bg-zinc-800 rounded" />
+                    <div className="h-3 w-24 bg-zinc-800 rounded" />
+                  </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            featuredShops.map((shop, i) => (
-              <motion.div
-                key={shop.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <Link 
-                  to={`/shop/${shop.slug}`}
-                  className="flex items-center gap-4 p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-primary/[0.02] transition-all group"
+              ))
+            ) : (
+              featuredShops.map((shop, i) => (
+                <motion.div
+                  key={shop.id || shop.slug || i}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08, duration: 0.3 }}
                 >
-                  <div className="h-14 w-14 rounded-lg bg-zinc-900 flex items-center justify-center shrink-0 border border-border group-hover:border-primary/30">
-                    {shop.logo ? (
-                      <img src={shop.logo} alt={shop.name} className="h-full w-full object-cover rounded-lg" referrerPolicy="no-referrer" />
-                    ) : (
-                      <Store className="h-6 w-6 text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-grow">
-                    <h3 className="font-bold text-sm tracking-tight">{shop.name}</h3>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mt-1">
-                      <MapPin className="h-2 w-2 text-primary" />
-                      <span>{shop.location || "Online"}</span>
-                      {shop.isVerified && <span className="text-blue-500">• Verified</span>}
+                  <Link 
+                    to={`/shop/${shop.slug}`}
+                    className="flex items-center gap-4 p-3.5 rounded-xl border border-border/60 bg-background/40 hover:border-primary/60 hover:bg-primary/[0.04] transition-all group shadow-sm hover:shadow-md"
+                  >
+                    <div className="h-14 w-14 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0 border border-border/80 overflow-hidden group-hover:border-primary/50 transition-colors">
+                      {shop.logo ? (
+                        <img 
+                          src={shop.logo} 
+                          alt={shop.name} 
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          referrerPolicy="no-referrer" 
+                        />
+                      ) : (
+                        <Store className="h-6 w-6 text-primary" />
+                      )}
                     </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-zinc-700 group-hover:text-primary transition-colors" />
-                </Link>
-              </motion.div>
-            ))
-          )}
+                    
+                    <div className="flex-grow min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-sm tracking-tight text-foreground truncate group-hover:text-primary transition-colors">
+                          {shop.name}
+                        </h3>
+                        {shop.isVerified !== false && (
+                          <span className="text-[10px] text-blue-400 font-semibold flex items-center shrink-0" title="Verified Studio">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1 text-zinc-300">
+                          <MapPin className="h-3 w-3 text-primary shrink-0" />
+                          <span className="truncate">{shop.location || "Mumbai"}</span>
+                        </span>
+                        <span className="text-zinc-600">•</span>
+                        <span className="flex items-center gap-1 text-amber-400 font-semibold shrink-0">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span>{shop.rating ? Number(shop.rating).toFixed(1) : "4.9"}</span>
+                        </span>
+                      </div>
+
+                      {shop.specialty && (
+                        <p className="text-[10px] text-muted-foreground/80 truncate mt-1">
+                          {shop.specialty}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="h-8 w-8 rounded-full border border-border flex items-center justify-center shrink-0 text-muted-foreground group-hover:border-primary group-hover:bg-primary group-hover:text-black transition-all">
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="pt-4 mt-2 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
+          <span className="flex items-center gap-1 text-zinc-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live partner studios
+          </span>
+          <Link to="/marketplace" className="text-primary hover:underline font-semibold">
+            Browse directory →
+          </Link>
         </div>
       </section>
 
@@ -153,8 +225,13 @@ export default function Home() {
         </Button>
       </section>
 
+      {/* Seasonal Promotions Carousel (Festive & Bridal Showcase) */}
+      <div className="md:col-span-4 mt-6 mb-4">
+        <SeasonalPromotionsCarousel />
+      </div>
+
       {/* New Immersive CTA Section */}
-      <section className="md:col-span-4 mt-12 mb-12">
+      <section className="md:col-span-4 mt-8 mb-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           <motion.div 
             initial={{ opacity: 0, x: -30 }}

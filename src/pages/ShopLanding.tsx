@@ -72,6 +72,35 @@ export default function ShopLanding({ previewData }: { previewData?: ShopData })
         if (!querySnapshot.empty) {
           const doc = querySnapshot.docs[0];
           setShop({ id: doc.id, ...doc.data() } as ShopData);
+        } else {
+          // Check curated fallback shops
+          const { CURATED_SHOPS } = await import("@/data/curatedShops");
+          const curated = CURATED_SHOPS.find(s => s.slug === slug);
+          if (curated) {
+            setShop({
+              id: curated.id,
+              name: curated.name,
+              slug: curated.slug,
+              description: curated.description,
+              logo: curated.logo,
+              location: curated.location,
+              rating: curated.rating,
+              ratingCount: curated.ratingCount,
+              templateId: "luxury",
+              isVerified: curated.isVerified,
+              isActive: true,
+              content: {
+                heroTitle: curated.name,
+                heroSubtitle: curated.specialty,
+                heroImage: curated.coverImage,
+                aboutText: curated.description,
+                services: curated.services?.map(s => ({ name: s.name, price: s.price, description: s.duration })),
+              },
+              theme: {
+                primaryColor: "#cda45e"
+              }
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching shop:", error);

@@ -16,6 +16,7 @@ import Services from "@/pages/Services";
 import Gallery from "@/pages/Gallery";
 import About from "@/pages/About";
 import Book from "@/pages/Book";
+import BundledServices from "@/pages/BundledServices";
 import Dashboard from "@/pages/Dashboard";
 import AdminMembers from "@/pages/AdminMembers";
 import AdminShops from "@/pages/AdminShops";
@@ -40,6 +41,9 @@ function AnimatedRoutes() {
         <Routes location={location}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/bundles" element={<BundledServices />} />
+          <Route path="/bundled-services" element={<BundledServices />} />
+          <Route path="/book" element={<Book />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/about" element={<About />} />
           <Route 
