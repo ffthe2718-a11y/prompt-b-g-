@@ -20,10 +20,13 @@ import BundledServices from "@/pages/BundledServices";
 import Dashboard from "@/pages/Dashboard";
 import AdminMembers from "@/pages/AdminMembers";
 import AdminShops from "@/pages/AdminShops";
+import AdminHomeServices from "@/pages/AdminHomeServices";
+import AdminAnalytics from "@/pages/AdminAnalytics";
 import PartnerWithUs from "@/pages/PartnerWithUs";
 import ShopLanding from "@/pages/ShopLanding";
 import ShopEditor from "@/pages/ShopEditor";
 import Marketplace from "@/pages/Marketplace";
+import ReferralDashboard from "@/pages/ReferralDashboard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AnimatedRoutes() {
@@ -71,6 +74,30 @@ function AnimatedRoutes() {
             } 
           />
           <Route 
+            path="/admin/analytics" 
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminAnalytics />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminAnalytics />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/home-services" 
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminHomeServices />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/admin/shops" 
             element={
               <ProtectedRoute requireAdmin>
@@ -88,6 +115,8 @@ function AnimatedRoutes() {
           />
           <Route path="/shop/:slug" element={<ShopLanding />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/referrals" element={<ReferralDashboard />} />
+          <Route path="/referral-dashboard" element={<ReferralDashboard />} />
           <Route 
             path="/dashboard/shop-editor" 
             element={

@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db, handleFirestoreError, OperationType } from "@/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, getDoc, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { format } from "date-fns";
-import { Edit2, User, Phone, Mail, Droplets, Download, Repeat, Bell, Globe, ArrowRight, Eye, Check, Trash2, Clock, Calendar, XCircle, ArrowUpDown, Crown, Sparkles, Trophy, Star, ShieldCheck } from "lucide-react";
+import { Edit2, User, Phone, Mail, Droplets, Download, Repeat, Bell, BellRing, Globe, ArrowRight, Eye, Check, Trash2, Clock, Calendar, XCircle, ArrowUpDown, Crown, Sparkles, Trophy, Star, ShieldCheck, Gift, Share2, Copy, Coins, Users, Home, Navigation, MapPin, CreditCard, ShieldAlert, AlertTriangle, QrCode, Building, Store, Scissors } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import LoyaltyRewards from "@/components/LoyaltyRewards";
+import { useAppointmentReminders } from "@/hooks/useAppointmentReminders";
 import {
   Table,
   TableCell,
@@ -51,14 +52,33 @@ interface Appointment {
   phone?: string;
   service?: string;
   shopId?: string;
+  stylist?: string;
   date?: string;
   time?: string;
+  notes?: string;
   address?: string;
   userId: string;
   status?: string;
   isRecurring?: boolean;
   frequency?: string;
   duration?: string;
+  serviceType?: 'home' | 'salon';
+  deliveryAddress?: {
+    street?: string;
+    landmark?: string;
+    city?: string;
+    pincode?: string;
+    fullAddress?: string;
+  } | null;
+  distanceKm?: number;
+  homeServiceFee?: number;
+  subtotal?: number;
+  totalAmount?: number;
+  advanceRequired?: number;
+  advanceAmountPaid?: number;
+  remainingAmount?: number;
+  advancePaid?: boolean;
+  transactionId?: string | null;
   createdAt: any;
 }
 
@@ -75,6 +95,11 @@ export default function Dashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Pay Deposit states
+  const [payingDepositAppointment, setPayingDepositAppointment] = useState<Appointment | null>(null);
+  const [depositPaymentMethod, setDepositPaymentMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
+  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false);
+
   // Review states for appointment feedback
   const [reviewAppointment, setReviewAppointment] = useState<Appointment | null>(null);
   const [reviewRating, setReviewRating] = useState<number>(5);
@@ -86,10 +111,49 @@ export default function Dashboard() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [userReviews, setUserReviews] = useState<Record<string, any>>({});
 
+  // Proactive 24-hour Appointment Reminders
+  const {
+    permission: notifPermission,
+    requestPermission: handleRequestPermission,
+    triggerCheck: handleTrigger24hReminders,
+    upcoming24hCount,
+    upcoming24hAppointments,
+  } = useAppointmentReminders(appointments);
+
   const qualifyingVisits = useMemo(() => {
     return appointments.filter(a => a.status === 'completed' || a.status === 'confirmed' || a.status === 'pending');
   }, [appointments]);
   const isGoldMember = qualifyingVisits.length >= 5;
+
+  const handlePayAdvanceDeposit = async () => {
+    if (!payingDepositAppointment?.id) return;
+    setIsProcessingDeposit(true);
+    try {
+      await new Promise(res => setTimeout(res, 850));
+      const txnId = `AUR-DEP-${Math.floor(100000 + Math.random() * 900000)}`;
+      const depositAmount = payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 1500) * 0.25);
+      const total = payingDepositAppointment.totalAmount || (depositAmount * 4);
+      const remaining = total - depositAmount;
+
+      const docRef = doc(db, "customers", payingDepositAppointment.id);
+      await updateDoc(docRef, {
+        advancePaid: true,
+        advanceAmountPaid: depositAmount,
+        remainingAmount: remaining,
+        transactionId: txnId,
+        status: "confirmed"
+      });
+
+      toast.success("25% Advance Deposit Verified! Your appointment is now confirmed.", {
+        description: `Txn Reference: ${txnId}`
+      });
+      setPayingDepositAppointment(null);
+    } catch (err) {
+      toast.error(getFriendlyErrorMessage(err));
+    } finally {
+      setIsProcessingDeposit(false);
+    }
+  };
 
   useEffect(() => {
     const servicesRef = collection(db, "services");
@@ -102,7 +166,7 @@ export default function Dashboard() {
       }));
       setDynamicServices(docs);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "services");
+      console.warn("Dynamic services list note, using curated catalog:", error);
     });
 
     return () => unsubscribe();
@@ -383,6 +447,36 @@ export default function Dashboard() {
     }
   };
 
+  const handleCompleteDepositPayment = async () => {
+    if (!payingDepositAppointment) return;
+    setIsProcessingDeposit(true);
+
+    try {
+      await new Promise(res => setTimeout(res, 1000));
+      const mockTxnId = "TXN_DEP_" + Math.random().toString(36).substring(2, 9).toUpperCase();
+      const advanceDue = payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25);
+      const remaining = Math.max(0, (payingDepositAppointment.totalAmount || 0) - advanceDue);
+
+      await updateDoc(doc(db, "customers", payingDepositAppointment.id), {
+        advancePaid: true,
+        advanceAmountPaid: advanceDue,
+        remainingAmount: remaining,
+        status: "confirmed",
+        transactionId: mockTxnId,
+        depositPaymentMethod: depositPaymentMethod,
+        depositPaidAt: new Date().toISOString()
+      });
+
+      toast.success(`₹${advanceDue} (25% Advance) verified successfully! Appointment confirmed.`);
+      setPayingDepositAppointment(null);
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      handleFirestoreError(error, OperationType.UPDATE, `customers/${payingDepositAppointment.id}`);
+    } finally {
+      setIsProcessingDeposit(false);
+    }
+  };
+
   const handleToggleReviewTag = (tag: string) => {
     setReviewTags(prev => 
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
@@ -566,6 +660,11 @@ export default function Dashboard() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="referrals" className="data-[state=active]:bg-primary data-[state=active]:text-black flex items-center gap-1.5">
+              <Gift className="h-4 w-4 text-emerald-400" />
+              Refer & Earn
+              <span className="bg-emerald-500/20 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded font-bold leading-none border border-emerald-500/30">+250 PTS</span>
+            </TabsTrigger>
             {(profile?.role === 'Owner' || isAdmin || isVendor) && (
               <TabsTrigger value="shop" className="data-[state=active]:bg-primary data-[state=active]:text-black">Shop Landing Page</TabsTrigger>
             )}
@@ -664,17 +763,71 @@ export default function Dashboard() {
               </Card>
             )}
 
+            {/* 24-Hour Proactive Appointment Alert Banner */}
+            {upcoming24hCount > 0 && (
+              <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary/20 via-black to-card border border-primary/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg shadow-primary/10">
+                <div className="flex items-start gap-3.5">
+                  <div className="h-10 w-10 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0 text-primary font-bold">
+                    ⏳
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                      Upcoming Appointment Tomorrow ({upcoming24hCount} in the next 24 hours)
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Your scheduled salon specialist or home service visit is approaching. Browser alerts & notifications will remind you prior to service.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {notifPermission !== "granted" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleRequestPermission}
+                      className="h-8 text-[11px] uppercase tracking-wider font-bold border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 gap-1.5"
+                    >
+                      <BellRing className="h-3.5 w-3.5" />
+                      Enable Alerts
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => handleTrigger24hReminders({ forceTrigger: true, enableSound: true })}
+                    className="h-8 text-[11px] uppercase tracking-wider font-bold bg-primary text-black hover:bg-primary/90 gap-1.5"
+                  >
+                    <Bell className="h-3.5 w-3.5" />
+                    Test 24h Alert
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="mb-8 flex items-center justify-between">
               <h2 className="text-xl font-serif text-primary italic">Managed Bookings</h2>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => exportToCSV(appointments, `appointments_${user.uid}.csv`)}
-                className="border-border bg-card hover:bg-white/5 text-xs uppercase tracking-widest gap-2"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Export CSV
-              </Button>
+              <div className="flex items-center gap-3">
+                {notifPermission !== "granted" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRequestPermission}
+                    className="text-[10px] uppercase tracking-widest text-amber-400 hover:text-amber-300 gap-1"
+                  >
+                    <BellRing className="h-3.5 w-3.5" />
+                    Enable Push
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => exportToCSV(appointments, `appointments_${user.uid}.csv`)}
+                  className="border-border bg-card hover:bg-white/5 text-xs uppercase tracking-widest gap-2"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export CSV
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-12">
@@ -733,104 +886,174 @@ export default function Dashboard() {
                             </TableCell>
                           </TableRow>
                         ) : (
-                          upcomingAppointments.map((appointment) => (
-                            <TableRow key={appointment.id} className="border-border hover:bg-white/5 transition-colors">
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-primary" />
-                                  <span>{appointment.name}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col gap-1">
-                                  <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 w-fit">
-                                    {appointment.service || "General"}
-                                  </Badge>
-                                  {appointment.isRecurring && (
-                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground uppercase tracking-widest">
-                                      <Repeat className="h-2.5 w-2.5 text-primary" />
-                                      {appointment.frequency} • {appointment.duration}m
+                          upcomingAppointments.map((appointment) => {
+                            const isHome = appointment.serviceType === 'home';
+                            const depositDue = appointment.advanceRequired || Math.round((appointment.totalAmount || 1500) * 0.25);
+                            const balanceDue = appointment.remainingAmount !== undefined ? appointment.remainingAmount : (appointment.totalAmount ? appointment.totalAmount - (appointment.advanceAmountPaid || 0) : 0);
+
+                            return (
+                              <TableRow key={appointment.id} className="border-border hover:bg-white/5 transition-colors">
+                                <TableCell className="font-medium">
+                                  <div className="flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-4 w-4 text-primary shrink-0" />
+                                      <span className="font-bold text-white text-xs">{appointment.name}</span>
                                     </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Select 
-                                  value={appointment.status || "pending"} 
-                                  onValueChange={(val) => handleStatusUpdate(appointment.id, val)}
-                                  disabled={!isAdmin && profile?.role !== 'Owner' && appointment.status === 'confirmed'}
-                                >
-                                  <SelectTrigger className={cn(
-                                    "h-8 w-[120px] text-[10px] uppercase tracking-widest border-0 bg-transparent focus:ring-0",
-                                    appointment.status === 'confirmed' ? "text-green-500" :
-                                    appointment.status === 'cancelled' ? "text-red-500" :
-                                    "text-yellow-500"
-                                  )}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-card border-border">
-                                    <SelectItem value="pending" className="text-yellow-500">Pending</SelectItem>
-                                    <SelectItem value="confirmed" className="text-green-500">Confirmed</SelectItem>
-                                    <SelectItem value="cancelled" className="text-red-500">Cancelled</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                <div className="flex flex-col text-[11px]">
-                                  <span className="text-foreground">
-                                    {appointment.date ? format(new Date(appointment.date), "MMM d, yyyy") : "N/A"}
-                                  </span>
-                                  <span className="text-primary">
-                                    {appointment.time || "N/A"}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(appointment)} className="h-8 w-8 hover:text-primary">
-                                        <Edit2 className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Edit</TooltipContent>
-                                  </Tooltip>
+                                    
+                                    {/* Service Mode Badge */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {isHome ? (
+                                        <Badge className="bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[9px] uppercase font-mono px-2 py-0.5 flex items-center gap-1">
+                                          <Home className="h-3 w-3 text-amber-400" />
+                                          Home Service ({appointment.distanceKm || 0} km)
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[9px] uppercase font-mono px-2 py-0.5 flex items-center gap-1">
+                                          <Store className="h-3 w-3 text-primary" />
+                                          In-Salon
+                                        </Badge>
+                                      )}
+                                    </div>
 
-                                  {appointment.status !== 'cancelled' && (
+                                    {/* Delivery Address (if Home Service) */}
+                                    {isHome && (appointment.deliveryAddress?.fullAddress || appointment.deliveryAddress?.street) && (
+                                      <div className="flex items-start gap-1 text-[10px] text-zinc-400 max-w-[220px] leading-tight">
+                                        <MapPin className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                                        <span className="truncate">{appointment.deliveryAddress?.fullAddress || `${appointment.deliveryAddress?.street}, ${appointment.deliveryAddress?.city || ''}`}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col gap-1">
+                                    <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 w-fit font-medium">
+                                      {appointment.service || "General"}
+                                    </Badge>
+                                    {appointment.stylist && (
+                                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                                        <Scissors className="h-2.5 w-2.5 text-primary" /> {appointment.stylist}
+                                      </span>
+                                    )}
+                                    {appointment.isRecurring && (
+                                      <div className="flex items-center gap-1 text-[9px] text-muted-foreground uppercase tracking-widest">
+                                        <Repeat className="h-2.5 w-2.5 text-primary" />
+                                        {appointment.frequency} • {appointment.duration}m
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col gap-1.5">
+                                    <Select 
+                                      value={appointment.status || "pending"} 
+                                      onValueChange={(val) => handleStatusUpdate(appointment.id, val)}
+                                      disabled={!isAdmin && profile?.role !== 'Owner' && appointment.status === 'confirmed'}
+                                    >
+                                      <SelectTrigger className={cn(
+                                        "h-7 w-[125px] text-[10px] uppercase font-bold tracking-widest border border-border bg-background/50 focus:ring-0",
+                                        appointment.status === 'confirmed' ? "text-emerald-400 border-emerald-500/40" :
+                                        appointment.status === 'cancelled' ? "text-red-400 border-red-500/40" :
+                                        "text-yellow-400 border-yellow-500/40"
+                                      )}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-card border-border">
+                                        <SelectItem value="pending" className="text-yellow-400">Pending</SelectItem>
+                                        <SelectItem value="confirmed" className="text-emerald-400">Confirmed</SelectItem>
+                                        <SelectItem value="cancelled" className="text-red-400">Cancelled</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+
+                                    {/* 25% Advance Payment Status & Action */}
+                                    {appointment.advancePaid ? (
+                                      <div className="flex flex-col gap-0.5">
+                                        <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-mono px-1.5 py-0.5 w-fit flex items-center gap-1">
+                                          <Check className="h-2.5 w-2.5 text-emerald-400" />
+                                          25% Paid (₹{appointment.advanceAmountPaid || depositDue})
+                                        </Badge>
+                                        <span className="text-[9px] text-zinc-400 font-mono">
+                                          Balance: ₹{balanceDue}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col gap-1">
+                                        <Badge variant="outline" className="border-amber-400/50 text-amber-400 bg-amber-400/10 text-[9px] font-mono px-1.5 py-0.5 w-fit flex items-center gap-1">
+                                          <AlertTriangle className="h-2.5 w-2.5" />
+                                          Pending 25% (₹{depositDue})
+                                        </Badge>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => setPayingDepositAppointment(appointment)}
+                                          className="h-6 text-[9px] font-bold uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 w-fit px-2"
+                                        >
+                                          Pay Deposit
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  <div className="flex flex-col text-[11px]">
+                                    <span className="text-foreground font-medium">
+                                      {appointment.date ? format(new Date(appointment.date), "MMM d, yyyy") : "N/A"}
+                                    </span>
+                                    <span className="text-primary font-mono">
+                                      {appointment.time || "N/A"}
+                                    </span>
+                                    {appointment.totalAmount && (
+                                      <span className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                                        Total: ₹{appointment.totalAmount}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2">
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          onClick={() => setConfirmAction({ type: 'cancel', id: appointment.id })} 
-                                          className="h-8 w-8 hover:text-orange-500"
-                                        >
-                                          <XCircle className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(appointment)} className="h-8 w-8 hover:text-primary">
+                                          <Edit2 className="h-4 w-4" />
                                         </Button>
                                       </TooltipTrigger>
-                                      <TooltipContent>Cancel Appointment</TooltipContent>
+                                      <TooltipContent>Edit</TooltipContent>
                                     </Tooltip>
-                                  )}
 
-                                  {(isAdmin || isOwner) && (
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          onClick={() => setConfirmAction({ type: 'delete', id: appointment.id })} 
-                                          className="h-8 w-8 hover:text-red-500"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Delete Record</TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                                    {appointment.status !== 'cancelled' && (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            onClick={() => setConfirmAction({ type: 'cancel', id: appointment.id })} 
+                                            className="h-8 w-8 hover:text-orange-500"
+                                          >
+                                            <XCircle className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Cancel Appointment</TooltipContent>
+                                      </Tooltip>
+                                    )}
+
+                                    {(isAdmin || isOwner) && (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            onClick={() => setConfirmAction({ type: 'delete', id: appointment.id })} 
+                                            className="h-8 w-8 hover:text-red-500"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Delete Record</TooltipContent>
+                                      </Tooltip>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
                         )}
                       </TableBody>
                     </Table>
@@ -1189,6 +1412,87 @@ export default function Dashboard() {
               onBookClick={() => setActiveTab("appointments")}
             />
           </TabsContent>
+
+          <TabsContent value="referrals">
+            <div className="rounded-2xl border border-primary/30 bg-card p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-6">
+                <div>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary font-bold mb-1">
+                    <Gift className="h-4 w-4" />
+                    Aurelia Privé Referral Program
+                  </div>
+                  <h3 className="text-2xl font-serif text-foreground">Invite Friends, Earn Loyalty Points</h3>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+                    Give friends ₹500 off their first luxury booking and earn 250 Loyalty Points for every completed visit.
+                  </p>
+                </div>
+                <Button asChild className="bg-primary text-black hover:bg-primary/90 text-xs font-bold uppercase tracking-wider">
+                  <Link to="/referrals">
+                    Full Referral Dashboard <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Quick Referral Link Banner */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3 p-5 rounded-xl bg-secondary/30 border border-border">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground block">Your Unique Invite Code</span>
+                  <div className="font-mono text-xl font-bold text-primary tracking-widest">
+                    {profile?.referralCode || `AURELIA-${user?.displayName?.split(" ")[0]?.toUpperCase() || "VIP"}-${user?.uid?.substring(0, 5).toUpperCase() || "LUXE"}`}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Friends receive ₹500 welcome deduction automatically when entering this code at checkout.
+                  </p>
+                </div>
+
+                <div className="space-y-3 p-5 rounded-xl bg-secondary/30 border border-border">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground block">One-Click Shareable Link</span>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      readOnly 
+                      value={`${typeof window !== "undefined" ? window.location.origin : ""}/book?ref=${profile?.referralCode || `AURELIA-${user?.displayName?.split(" ")[0]?.toUpperCase() || "VIP"}-${user?.uid?.substring(0, 5).toUpperCase() || "LUXE"}`}`}
+                      className="text-xs font-mono bg-background border-border h-9"
+                    />
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        const code = profile?.referralCode || `AURELIA-${user?.displayName?.split(" ")[0]?.toUpperCase() || "VIP"}-${user?.uid?.substring(0, 5).toUpperCase() || "LUXE"}`;
+                        const link = `${window.location.origin}/book?ref=${code}`;
+                        navigator.clipboard.writeText(link);
+                        toast.success("Referral link copied to clipboard!");
+                      }}
+                      className="bg-primary text-black hover:bg-primary/90 h-9 px-3 text-xs"
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const code = profile?.referralCode || `AURELIA-${user?.displayName?.split(" ")[0]?.toUpperCase() || "VIP"}-${user?.uid?.substring(0, 5).toUpperCase() || "LUXE"}`;
+                        const link = `${window.location.origin}/book?ref=${code}`;
+                        const text = encodeURIComponent(`Hey! ✨ Get ₹500 OFF your next salon booking at Aurelia Luxe with my code ${code}:\n${link}`);
+                        window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+                      }}
+                      className="h-7 text-[11px] text-emerald-400 border-emerald-500/30 hover:bg-emerald-950/20"
+                    >
+                      Share via WhatsApp
+                    </Button>
+                    <Button 
+                      asChild 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-7 text-[11px] text-primary hover:bg-primary/10 ml-auto"
+                    >
+                      <Link to="/referrals">View Rewards & Perks →</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
 
         {/* Edit Dialog */}
@@ -1508,6 +1812,181 @@ export default function Dashboard() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Deposit Verification & Payment Dialog */}
+        <Dialog open={!!payingDepositAppointment} onOpenChange={(open) => !open && setPayingDepositAppointment(null)}>
+          <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[540px] p-0 overflow-hidden max-h-[92vh] flex flex-col">
+            <DialogHeader className="p-6 pb-4 border-b border-zinc-900 bg-amber-500/5">
+              <div className="flex items-center gap-2 text-amber-400 text-xs uppercase tracking-widest font-bold mb-1">
+                <ShieldAlert className="h-4 w-4" />
+                Mandatory Advance Payment
+              </div>
+              <DialogTitle className="text-xl font-bold uppercase tracking-tight italic">
+                Pay 25% Booking Deposit
+              </DialogTitle>
+              <DialogDescription className="text-xs text-zinc-400 mt-1">
+                Secure your booking slot by verifying and paying the mandatory 25% advance deposit.
+              </DialogDescription>
+            </DialogHeader>
+
+            {payingDepositAppointment && (
+              <div className="overflow-y-auto p-6 space-y-5 flex-1">
+                {/* Warning Alert */}
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-200">
+                    <span className="font-bold text-amber-300">Important Policy: </span>
+                    Booking remains <span className="underline font-semibold">Pending Deposit</span> and is not confirmed until the 25% advance payment is verified.
+                  </div>
+                </div>
+
+                {/* Appointment Info */}
+                <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Service:</span>
+                    <span className="font-semibold text-white">{payingDepositAppointment.service || "Salon Service"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Mode:</span>
+                    <Badge variant="outline" className={cn("text-[10px]", payingDepositAppointment.serviceType === 'home' ? "bg-amber-500/10 text-amber-400 border-amber-500/30" : "bg-purple-500/10 text-purple-400 border-purple-500/30")}>
+                      {payingDepositAppointment.serviceType === 'home' ? `🏠 Home Service (${payingDepositAppointment.distanceKm || 0} km)` : "✂️ In-Salon"}
+                    </Badge>
+                  </div>
+                  {payingDepositAppointment.serviceType === 'home' && payingDepositAppointment.deliveryAddress?.fullAddress && (
+                    <div className="flex justify-between items-start pt-1 border-t border-zinc-800/60">
+                      <span className="text-zinc-400">Address:</span>
+                      <span className="text-right text-zinc-200 max-w-[260px]">{payingDepositAppointment.deliveryAddress.fullAddress}</span>
+                    </div>
+                  )}
+                  {payingDepositAppointment.date && (
+                    <div className="flex justify-between items-center pt-1 border-t border-zinc-800/60">
+                      <span className="text-zinc-400">Schedule:</span>
+                      <span className="font-mono text-zinc-200">{format(new Date(payingDepositAppointment.date), "dd MMM yyyy")} at {payingDepositAppointment.time || "Selected slot"}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pricing & 25% Advance Breakdown */}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-amber-500/20 space-y-2.5">
+                  <div className="text-xs uppercase tracking-widest text-zinc-400 font-bold mb-1">
+                    Payment Breakdown
+                  </div>
+                  <div className="flex justify-between text-xs text-zinc-300">
+                    <span>Service Subtotal:</span>
+                    <span className="font-mono">₹{payingDepositAppointment.subtotal || 0}</span>
+                  </div>
+                  {(payingDepositAppointment.homeServiceFee || 0) > 0 && (
+                    <div className="flex justify-between text-xs text-amber-300">
+                      <span>Home Service Charge ({payingDepositAppointment.distanceKm || 0} km):</span>
+                      <span className="font-mono">+ ₹{payingDepositAppointment.homeServiceFee}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs text-white font-semibold pt-2 border-t border-zinc-800">
+                    <span>Total Amount:</span>
+                    <span className="font-mono">₹{payingDepositAppointment.totalAmount || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-primary font-bold pt-1.5 border-t border-dashed border-primary/30">
+                    <span className="flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4" />
+                      Mandatory 25% Advance Deposit:
+                    </span>
+                    <span className="font-mono text-base">₹{payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-zinc-400">
+                    <span>Remaining Due at Service (75%):</span>
+                    <span className="font-mono">₹{payingDepositAppointment.remainingAmount || Math.round((payingDepositAppointment.totalAmount || 0) * 0.75)}</span>
+                  </div>
+                </div>
+
+                {/* Payment Method Selector */}
+                <div className="space-y-3">
+                  <Label className="text-xs uppercase tracking-widest text-zinc-400 font-bold block">
+                    Choose Deposit Payment Method
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'upi', label: 'UPI / QR', icon: '⚡' },
+                      { id: 'card', label: 'Card', icon: '💳' },
+                      { id: 'netbanking', label: 'NetBanking', icon: '🏦' },
+                    ].map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setDepositPaymentMethod(m.id as any)}
+                        className={cn(
+                          "p-2.5 rounded-xl border text-center transition-all flex flex-col items-center gap-1 text-xs",
+                          depositPaymentMethod === m.id
+                            ? "bg-primary/10 border-primary text-white font-bold"
+                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white"
+                        )}
+                      >
+                        <span className="text-base">{m.icon}</span>
+                        <span>{m.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {depositPaymentMethod === 'upi' && (
+                    <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-center space-y-2">
+                      <div className="text-[11px] text-zinc-400">UPI ID: <span className="font-mono text-primary font-bold">aurelia.luxe@icici</span></div>
+                      <div className="inline-block p-2 bg-white rounded-lg">
+                        <div className="w-24 h-24 bg-zinc-900 flex items-center justify-center text-white text-[10px] font-mono text-center p-1">
+                          [QR CODE FOR ₹{payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25)}]
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-zinc-500">Scan using GPay, PhonePe, Paytm, or BHIM</div>
+                    </div>
+                  )}
+
+                  {depositPaymentMethod === 'card' && (
+                    <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2 text-xs">
+                      <Input placeholder="Card Number (XXXX XXXX XXXX XXXX)" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="4532 8901 2345 6789" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="MM/YY" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="12/28" />
+                        <Input placeholder="CVV" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="888" type="password" />
+                      </div>
+                    </div>
+                  )}
+
+                  {depositPaymentMethod === 'netbanking' && (
+                    <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300">
+                      Popular Banks: HDFC, ICICI, SBI, Axis Bank, Kotak. Instant authorization.
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter className="pt-4 border-t border-zinc-900 flex sm:justify-between items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setPayingDepositAppointment(null)}
+                    className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white"
+                  >
+                    Pay Later
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCompleteDepositPayment}
+                    disabled={isProcessingDeposit}
+                    className="bg-primary text-black hover:bg-primary/90 font-bold uppercase tracking-widest text-xs h-11 px-8 rounded-none shadow-lg shadow-primary/20 flex items-center gap-2"
+                  >
+                    {isProcessingDeposit ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-black border-t-transparent animate-spin rounded-full" />
+                        Verifying Deposit...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Verify & Pay ₹{payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25)}
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 

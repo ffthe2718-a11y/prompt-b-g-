@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/firebase";
 import { collection, query, where, limit, getDocs } from "firebase/firestore";
 import SeasonalPromotionsCarousel from "@/components/SeasonalPromotionsCarousel";
+import CustomerTestimonialsSlider from "@/components/CustomerTestimonialsSlider";
 import { CURATED_SHOPS } from "@/data/curatedShops";
 
 export default function Home() {
@@ -228,6 +229,11 @@ export default function Home() {
       {/* Seasonal Promotions Carousel (Festive & Bridal Showcase) */}
       <div className="md:col-span-4 mt-6 mb-4">
         <SeasonalPromotionsCarousel />
+      </div>
+
+      {/* Customer Testimonials & Verified Social Proof Slider */}
+      <div className="md:col-span-4 my-6">
+        <CustomerTestimonialsSlider />
       </div>
 
       {/* New Immersive CTA Section */}

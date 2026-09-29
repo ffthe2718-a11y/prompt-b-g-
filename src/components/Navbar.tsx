@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { Scissors, Menu, X, User, Shield, Bell, Check, Globe, Calendar, BarChart3 } from "lucide-react";
+import { Scissors, Menu, X, User, Shield, Bell, Check, Globe, Calendar, BarChart3, Gift } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -99,6 +99,14 @@ export default function Navbar() {
             }`}
           >
             {t("partner.title")}
+          </Link>
+          <Link
+            to="/referrals"
+            className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-1.5 ${
+              location.pathname === "/referrals" ? "text-primary font-bold" : "text-emerald-400"
+            }`}
+          >
+            <Gift className="h-3.5 w-3.5" /> Refer & Earn
           </Link>
           {user && (
             <Link
@@ -201,6 +209,22 @@ export default function Navbar() {
               >
                 <Shield className="h-4 w-4" /> Admin
               </Link>
+              <Link
+                to="/admin/analytics"
+                className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-2 ${
+                  location.pathname === "/admin/analytics" ? "text-primary font-bold" : "text-muted-foreground"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4 text-primary" /> Analytics
+              </Link>
+              <Link
+                to="/admin/home-services"
+                className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-2 ${
+                  location.pathname === "/admin/home-services" ? "text-primary font-bold" : "text-amber-400/90"
+                }`}
+              >
+                <Scissors className="h-4 w-4" /> Home Services
+              </Link>
               {isAdmin && (
                 <Link
                   to="/admin/shops"
@@ -208,7 +232,7 @@ export default function Navbar() {
                     location.pathname === "/admin/shops" ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
-                  <BarChart3 className="h-4 w-4" /> Master Dash
+                  <Globe className="h-4 w-4" /> Master Dash
                 </Link>
               )}
             </div>
@@ -287,6 +311,15 @@ export default function Navbar() {
                     {link.name}
                   </Link>
                 ))}
+                <Link
+                  to="/referrals"
+                  onClick={() => setIsOpen(false)}
+                  className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
+                    location.pathname === "/referrals" ? "text-primary" : "text-emerald-400"
+                  }`}
+                >
+                  <Gift className="h-5 w-5" /> Refer & Earn
+                </Link>
                 {user && (
                   <Link
                     to="/dashboard"
@@ -310,15 +343,35 @@ export default function Navbar() {
                   </Link>
                 )}
                 {(isAdmin || isOwner) && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsOpen(false)}
-                    className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                      location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    <Shield className="h-5 w-5" /> Admin
-                  </Link>
+                  <>
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
+                        location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      <Shield className="h-5 w-5" /> Admin
+                    </Link>
+                    <Link
+                      to="/admin/analytics"
+                      onClick={() => setIsOpen(false)}
+                      className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
+                        location.pathname === "/admin/analytics" ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      <BarChart3 className="h-5 w-5 text-primary" /> Analytics & Trends
+                    </Link>
+                    <Link
+                      to="/admin/home-services"
+                      onClick={() => setIsOpen(false)}
+                      className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
+                        location.pathname === "/admin/home-services" ? "text-amber-400" : "text-muted-foreground"
+                      }`}
+                    >
+                      <Scissors className="h-5 w-5 text-amber-400" /> Home Services
+                    </Link>
+                  </>
                 )}
                 
                 <div className="h-px bg-border my-2" />

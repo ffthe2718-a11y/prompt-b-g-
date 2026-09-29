@@ -46,6 +46,7 @@ import { CURATED_BUNDLES, CATALOG_SERVICES_FOR_BUNDLING, calculateCustomBundleDi
 import { CuratedBundle, BundleServiceItem } from "@/types/bundle";
 import { DEFAULT_STYLISTS, StylistMember } from "@/types/stylist";
 import { SALON_WHATSAPP } from "@/constants";
+import JoinWaitlistModal from "@/components/JoinWaitlistModal";
 
 export default function BundledServices() {
   const navigate = useNavigate();
@@ -488,7 +489,7 @@ export default function BundledServices() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Button
                         variant="outline"
                         onClick={() => setInspectingBundle(bridalGlowPackage)}
@@ -497,6 +498,14 @@ export default function BundledServices() {
                         <Info className="h-4 w-4 mr-1.5" />
                         Itinerary & Steps
                       </Button>
+                      <JoinWaitlistModal
+                        shopName="Aurelia Flagship Atelier (Bandra West)"
+                        shopId="shop-aurelia-flagship"
+                        serviceName={bridalGlowPackage.title}
+                        triggerText="Join Waitlist"
+                        triggerVariant="outline"
+                        triggerClassName="h-12 px-5 border-amber-500/40 text-amber-400 hover:bg-amber-400 hover:text-black text-xs font-bold uppercase tracking-wider"
+                      />
                       <Button
                         onClick={() => handleOpenCuratedBooking(bridalGlowPackage)}
                         className="rounded bg-primary text-black font-bold text-xs uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 h-12 px-7"

@@ -32,7 +32,7 @@ service cloud.firestore {
 
     function isValidCustomer(data) {
       return data.keys().hasAll(['name', 'phone', 'userId', 'service', 'date', 'time']) &&
-             data.userId == request.auth.uid;
+             (data.userId == request.auth.uid || isAdmin() || isManager());
     }
 
     function isValidShop(data) {
@@ -91,6 +91,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    function isValidService(data) {
+      return data.keys().hasAll(['shopId', 'name', 'price']) &&
+             data.shopId is string && data.shopId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.price is number && data.price >= 0 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 1000));
+    }
+
     match /shops/{shopId} {
       allow read: if true; // Publicly readable
       allow create: if isAuthenticated() && isValidShop(request.resource.data);
@@ -98,6 +106,13 @@ service cloud.firestore {
                     isValidShop(request.resource.data) &&
                     (isAdmin() || request.resource.data.ownerId == resource.data.ownerId); // Owner cannot transfer shop
       allow delete: if isAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if true; // Publicly readable for salon service browsing & booking
+      allow create: if isAuthenticated() && isValidService(request.resource.data) && (isAdmin() || isManager() || request.resource.data.shopId == request.auth.uid);
+      allow update: if isAuthenticated() && isValidService(request.resource.data) && (isAdmin() || isManager());
+      allow delete: if isAuthenticated() && (isAdmin() || isManager());
     }
 
     match /messages/{messageId} {
@@ -120,6 +135,26 @@ service cloud.firestore {
                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpfulCount'])) ||
                      isAdmin());
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /waitlist/{waitlistId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin() || isManager());
+      allow create: if true; // Allow guests and registered users to submit waitlist requests
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin() || isManager());
+      allow delete: if isAdmin() || isManager();
+    }
+
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.referrerId == request.auth.uid || 
+                      resource.data.referredUserId == request.auth.uid || 
+                      isAdmin() || isManager());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                     (resource.data.referrerId == request.auth.uid || 
+                      resource.data.referredUserId == request.auth.uid || 
+                      isAdmin());
+      allow delete: if isAdmin();
     }
   }
 }

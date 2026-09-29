@@ -117,6 +117,25 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["shopId", "userId", "userName", "rating", "title", "comment"]
+    },
+    "Referral": {
+      "title": "Referral",
+      "description": "Stores user referral tracking, invitations, points earned, and friend booking rewards.",
+      "type": "object",
+      "properties": {
+        "referrerId": { "type": "string", "description": "UID of the user who referred the friend" },
+        "referralCode": { "type": "string", "description": "Unique referral code used" },
+        "referredUserId": { "type": "string", "description": "UID of the referred friend who booked" },
+        "referredUserName": { "type": "string", "description": "Name of the referred friend" },
+        "referredUserEmail": { "type": "string", "format": "email" },
+        "appointmentId": { "type": "string", "description": "Linked appointment document ID" },
+        "service": { "type": "string", "description": "Service booked by the friend" },
+        "amount": { "type": "number", "description": "Booking amount" },
+        "pointsEarned": { "type": "number", "description": "Loyalty points awarded to the referrer" },
+        "status": { "type": "string", "enum": ["pending", "completed", "rewarded"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referralCode", "createdAt"]
     }
   },
   "firestore": {
@@ -143,6 +162,10 @@
     "/reviews/{reviewId}": {
       "schema": "Review",
       "description": "Reviews and star ratings for individual shops"
+    },
+    "/referrals/{referralId}": {
+      "schema": "Referral",
+      "description": "Referral invitations and rewarded booking records"
     }
   }
 }

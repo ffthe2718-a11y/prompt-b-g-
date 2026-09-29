@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db, handleFirestoreError, OperationType } from "@/firebase";
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { format } from "date-fns";
-import { Edit2, Trash2, Download, Bell, Repeat, BellRing, Check, Search, User, Plus, Scissors, BarChart3, Shield, UserCircle } from "lucide-react";
+import { Edit2, Trash2, Download, Bell, Repeat, BellRing, Check, Search, User, Plus, Scissors, BarChart3, Shield, UserCircle, Home, ShieldAlert, ShieldCheck, AlertTriangle, MapPin, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,11 +39,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { exportToCSV } from "@/lib/exportUtils";
 import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 
 import { ROLES, SALON_SERVICES } from "@/constants";
+import { useAppointmentReminders } from "@/hooks/useAppointmentReminders";
+import { checkAndTrigger24hReminders, requestBrowserNotificationPermission, getTimeUntilAppointment } from "@/lib/reminderUtils";
 
 interface Appointment {
   id: string;
@@ -60,6 +62,23 @@ interface Appointment {
   isRecurring?: boolean;
   frequency?: string;
   duration?: string;
+  serviceType?: 'home' | 'salon';
+  deliveryAddress?: {
+    street?: string;
+    landmark?: string;
+    city?: string;
+    pincode?: string;
+    fullAddress?: string;
+  } | null;
+  distanceKm?: number;
+  homeServiceFee?: number;
+  subtotal?: number;
+  totalAmount?: number;
+  advanceRequired?: number;
+  advanceAmountPaid?: number;
+  remainingAmount?: number;
+  advancePaid?: boolean;
+  transactionId?: string | null;
   createdAt: any;
 }
 
@@ -89,6 +108,15 @@ export default function AdminMembers() {
   const [dynamicServices, setDynamicServices] = useState<any[]>([]);
   const [newService, setNewService] = useState({ name: "", price: "", description: "" });
   const [isAddingService, setIsAddingService] = useState(false);
+
+  // Proactive 24-hour Appointment Reminders Hook
+  const {
+    permission: notifPermission,
+    requestPermission: handleRequestPermission,
+    triggerCheck: handleTrigger24hReminders,
+    upcoming24hCount,
+    upcoming24hAppointments,
+  } = useAppointmentReminders(appointments);
 
   const timeSlots = [
     "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", 
@@ -334,14 +362,20 @@ export default function AdminMembers() {
   const handleSendReminders = async () => {
     setIsSendingReminders(true);
     try {
-      const response = await fetch("/api/admin/trigger-reminders", {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.success("Reminders triggered successfully");
-      } else {
-        throw new Error(data.error || "Failed to trigger reminders");
+      // 1. Trigger Proactive Client Browser Notifications & Rich In-App Alerts
+      const reminderResult = await handleTrigger24hReminders({ forceTrigger: true, enableSound: true });
+
+      // 2. Trigger Server-side email/SMS cron endpoint
+      try {
+        const response = await fetch("/api/admin/trigger-reminders", {
+          method: "POST",
+        });
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`Dispatched 24h reminders! Alerted ${reminderResult.triggeredCount} client appointment(s) in the 24-hour window.`);
+        }
+      } catch (srvErr) {
+        toast.success(`Dispatched ${reminderResult.triggeredCount} 24-hour proactive appointment alerts!`);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to trigger reminders");
@@ -379,6 +413,10 @@ export default function AdminMembers() {
     }
   };
 
+  const pendingHomeDepositsCount = appointments.filter(
+    (a) => a.serviceType === "home" && !a.advancePaid && a.status !== "cancelled"
+  ).length;
+
   if (loading) return null;
 
   return (
@@ -395,15 +433,60 @@ export default function AdminMembers() {
           <h1 className="text-4xl font-light tracking-tight md:text-5xl">
             ALL <span className="italic text-primary">APPOINTMENTS</span>
           </h1>
-          {isAdmin && (
-            <Button asChild className="mt-6 bg-primary text-black hover:bg-primary/90 gap-2">
-              <a href="/admin/shops">
+          <div className="flex flex-wrap items-center gap-3 mt-6">
+            <Button asChild className="bg-primary text-black hover:bg-primary/90 gap-2 font-semibold">
+              <Link to="/admin/analytics">
                 <BarChart3 className="h-4 w-4" />
-                Go to Master Control Panel (Shops)
-              </a>
+                Analytics & Visualizations
+              </Link>
             </Button>
-          )}
+            {isAdmin && (
+              <Button asChild variant="outline" className="border-border bg-card hover:bg-white/5 gap-2">
+                <Link to="/admin/shops">
+                  <Shield className="h-4 w-4 text-primary" />
+                  Master Control Panel (Shops)
+                </Link>
+              </Button>
+            )}
+            <Button
+              asChild
+              variant="outline"
+              className={cn(
+                "gap-2 border-border bg-card hover:bg-white/5",
+                pendingHomeDepositsCount > 0 && "border-amber-500/60 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
+              )}
+            >
+              <Link to="/admin/home-services">
+                <Home className="h-4 w-4 text-amber-400" />
+                Home Services & Deposits
+                {pendingHomeDepositsCount > 0 ? (
+                  <Badge className="bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 ml-1 animate-pulse">
+                    {pendingHomeDepositsCount} Pending Verification
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] border-border text-muted-foreground ml-1">
+                    Manage
+                  </Badge>
+                )}
+              </Link>
+            </Button>
+          </div>
         </motion.div>
+
+        {pendingHomeDepositsCount > 0 && (
+          <div className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+              <div className="text-xs text-amber-200">
+                <span className="font-bold text-amber-300">{pendingHomeDepositsCount} Home Service {pendingHomeDepositsCount === 1 ? "Booking Requires" : "Bookings Require"} Advance Payment Verification: </span>
+                Managers can review delivery addresses and manually verify the mandatory 25% advance deposits.
+              </div>
+            </div>
+            <Button asChild size="sm" className="bg-amber-400 text-black hover:bg-amber-300 text-xs uppercase font-bold shrink-0">
+              <Link to="/admin/home-services">Verify Now →</Link>
+            </Button>
+          </div>
+        )}
 
         <Tabs defaultValue="appointments" className="w-full">
           <TabsList className="mb-8 bg-card border border-border">
@@ -510,16 +593,32 @@ export default function AdminMembers() {
                   </PopoverContent>
                 </Popover>
 
+                {notifPermission !== "granted" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRequestPermission}
+                    className="border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs uppercase tracking-widest gap-1.5 font-bold"
+                  >
+                    <BellRing className="h-3.5 w-3.5" />
+                    Enable Browser Push
+                  </Button>
+                )}
+
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleSendReminders}
                   disabled={isSendingReminders}
-                  className="border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs uppercase tracking-widest gap-2"
+                  className={cn(
+                    "border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs uppercase tracking-widest gap-2 font-bold",
+                    upcoming24hCount > 0 && "border-primary text-black bg-primary hover:bg-primary/90 shadow-sm"
+                  )}
                 >
                   <Bell className="h-3.5 w-3.5" />
-                  {isSendingReminders ? "Sending..." : "Send Reminders"}
+                  {isSendingReminders ? "Dispatching..." : `Trigger 24h Alerts (${upcoming24hCount} in 24h)`}
                 </Button>
+
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -531,6 +630,33 @@ export default function AdminMembers() {
                 </Button>
               </div>
             </div>
+
+            {upcoming24hCount > 0 && (
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/15 via-black to-card border border-primary/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-bold">
+                    ⏳
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                      {upcoming24hCount} Client {upcoming24hCount === 1 ? 'Appointment Scheduled' : 'Appointments Scheduled'} in the Next 24 Hours
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Proactive reminders are running automatically. Salon staff can trigger instant browser notifications and UI alerts anytime.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleTrigger24hReminders({ forceTrigger: true, enableSound: true })}
+                    className="h-8 text-[11px] uppercase tracking-wider font-bold bg-primary text-black hover:bg-primary/90"
+                  >
+                    Send 24h Alerts Now
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="mb-8 flex flex-col md:flex-row items-center gap-4 p-4 rounded-xl bg-card/50 border border-border/50">
               <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -595,19 +721,38 @@ export default function AdminMembers() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredAppointments.map((appointment) => (
-                        <TableRow key={appointment.id} className="border-border hover:bg-white/5 transition-colors">
+                      filteredAppointments.map((appointment) => {
+                        const isHome = appointment.serviceType === 'home';
+                        const isPendingDeposit = isHome && !appointment.advancePaid && appointment.status !== 'cancelled';
+
+                        return (
+                        <TableRow 
+                          key={appointment.id} 
+                          className={cn(
+                            "border-border hover:bg-white/5 transition-colors",
+                            isPendingDeposit && "bg-amber-500/[0.03] border-l-2 border-l-amber-400"
+                          )}
+                        >
                           <TableCell className="font-medium">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-2 cursor-help">
-                                  {appointment.name}
+                                <div className="flex flex-col gap-0.5 cursor-help">
+                                  <span className="font-semibold text-white">{appointment.name}</span>
+                                  {isHome && (
+                                    <Badge variant="outline" className="text-[9px] w-fit border-purple-500/30 text-purple-300 bg-purple-500/5 flex items-center gap-1 font-mono mt-0.5">
+                                      🏠 Home ({appointment.distanceKm || 0} km)
+                                    </Badge>
+                                  )}
                                 </div>
                               </TooltipTrigger>
-                              {appointment.address && (
+                              {(appointment.deliveryAddress || appointment.address) && (
                                 <TooltipContent className="bg-card border-border text-xs max-w-xs">
-                                  <p className="font-semibold text-primary mb-1 uppercase tracking-widest text-[10px]">Additional Notes</p>
-                                  <p className="text-muted-foreground leading-relaxed">{appointment.address}</p>
+                                  <p className="font-semibold text-primary mb-1 uppercase tracking-widest text-[10px]">
+                                    {isHome ? "Delivery Address" : "Additional Notes"}
+                                  </p>
+                                  <p className="text-muted-foreground leading-relaxed">
+                                    {appointment.deliveryAddress?.fullAddress || appointment.address}
+                                  </p>
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -629,17 +774,33 @@ export default function AdminMembers() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={cn(
-                                "uppercase text-[10px] tracking-widest",
-                                appointment.status === 'confirmed' ? "border-green-500/50 text-green-500 bg-green-500/5" :
-                                appointment.status === 'cancelled' ? "border-red-500/50 text-red-500 bg-red-500/5" :
-                                "border-yellow-500/50 text-yellow-500 bg-yellow-500/5"
+                            <div className="flex flex-col gap-1">
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "uppercase text-[10px] tracking-widest w-fit",
+                                  appointment.status === 'confirmed' ? "border-green-500/50 text-green-500 bg-green-500/5" :
+                                  appointment.status === 'cancelled' ? "border-red-500/50 text-red-500 bg-red-500/5" :
+                                  "border-yellow-500/50 text-yellow-500 bg-yellow-500/5"
+                                )}
+                              >
+                                {appointment.status || "pending"}
+                              </Badge>
+
+                              {isHome && (
+                                isPendingDeposit ? (
+                                  <Link to="/admin/home-services" className="inline-flex">
+                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[9px] uppercase tracking-wider font-mono hover:bg-amber-500/30">
+                                      ⚠️ Verify 25% Due (₹{appointment.advanceRequired || Math.round((appointment.totalAmount || 0) * 0.25)}) →
+                                    </Badge>
+                                  </Link>
+                                ) : appointment.advancePaid ? (
+                                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5 text-[9px] font-mono w-fit">
+                                    ✓ 25% Deposit Paid (₹{appointment.advanceAmountPaid})
+                                  </Badge>
+                                ) : null
                               )}
-                            >
-                              {appointment.status || "pending"}
-                            </Badge>
+                            </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             <div className="flex flex-col text-[11px]">
@@ -656,6 +817,13 @@ export default function AdminMembers() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {isPendingDeposit && (
+                                <Button asChild size="sm" className="h-7 px-2.5 text-[10px] uppercase font-bold bg-amber-400 text-black hover:bg-amber-300">
+                                  <Link to="/admin/home-services">
+                                    Verify
+                                  </Link>
+                                </Button>
+                              )}
                               <Button variant="ghost" size="icon" onClick={() => handleEditClick(appointment)} className="h-8 w-8 hover:text-primary">
                                 <Edit2 className="h-4 w-4" />
                               </Button>
@@ -665,7 +833,8 @@ export default function AdminMembers() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>

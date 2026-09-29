@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Phone, MapPin, Instagram, Facebook, Twitter, ShieldCheck, Mail, Star } from "lucide-react";
 import ShopReviews from "@/components/ShopReviews";
 import MeetYourStylist from "@/components/MeetYourStylist";
+import JoinWaitlistModal from "@/components/JoinWaitlistModal";
 import { StylistMember } from "@/types/stylist";
 import { cn } from "@/lib/utils";
 
@@ -295,13 +296,22 @@ export default function ShopLanding({ previewData }: { previewData?: ShopData })
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
+                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
                   >
-                    <Button size="lg" className="bg-primary text-black hover:bg-primary/90 rounded-none px-12 h-16 text-lg font-bold uppercase tracking-widest" asChild>
+                    <Button size="lg" className="bg-primary text-black hover:bg-primary/90 rounded-none px-12 h-16 text-base font-bold uppercase tracking-widest shadow-xl shadow-primary/20 w-full sm:w-auto" asChild>
                       <Link to={`/book?shopId=${shop.id}`}>
                         <Calendar className="mr-2 h-5 w-5" />
-                        Book Now
+                        Book Appointment
                       </Link>
                     </Button>
+                    <JoinWaitlistModal
+                      shopName={shop.name}
+                      shopId={shop.id}
+                      serviceName={shop.content?.services?.[0]?.name || "Atelier Master Treatment"}
+                      triggerText="Join Priority Waitlist"
+                      triggerVariant="outline"
+                      triggerClassName="h-16 px-8 rounded-none border-amber-500/40 text-amber-400 hover:bg-amber-400 hover:text-black font-bold uppercase tracking-widest text-sm w-full sm:w-auto"
+                    />
                   </motion.div>
                 </div>
               </section>
