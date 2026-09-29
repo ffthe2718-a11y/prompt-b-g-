@@ -10,6 +10,7 @@ import { db } from "@/firebase";
 import { collection, query, where, limit, getDocs } from "firebase/firestore";
 import SeasonalPromotionsCarousel from "@/components/SeasonalPromotionsCarousel";
 import CustomerTestimonialsSlider from "@/components/CustomerTestimonialsSlider";
+import ServicesSection from "@/components/ServicesSection";
 import { CURATED_SHOPS } from "@/data/curatedShops";
 
 export default function Home() {
@@ -51,11 +52,11 @@ export default function Home() {
   }, []);
   
   return (
-    <div className="mx-auto max-w-7xl p-6 grid grid-cols-1 md:grid-cols-4 md:grid-rows-3 gap-4 min-h-[90vh]">
+    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-6 grid grid-cols-1 md:grid-cols-4 gap-6 min-h-[90vh]">
       {/* Hero Section */}
       <section 
         ref={containerRef}
-        className="md:col-span-2 md:row-span-3 rounded-[16px] border border-primary bg-gradient-to-br from-card to-background p-8 relative overflow-hidden flex flex-col justify-center"
+        className="md:col-span-2 md:row-span-3 rounded-[20px] border border-primary bg-gradient-to-br from-card to-background p-6 sm:p-8 md:p-12 relative overflow-hidden flex flex-col justify-center min-h-[480px]"
       >
         <div className="absolute inset-0 z-0">
           <motion.img
@@ -86,15 +87,14 @@ export default function Home() {
               ))}
             </h1>
             <p className="mb-10 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Indulge in a premium styling experience tailored to your unique identity. 
-              Our master stylists specialize in precision cuts, traditional Champi, and custom coloring in the heart of Mumbai.
+              Get top-quality hair cuts, beard styling, Ayurvedic Champi, and hair coloring from expert stylists across Mumbai.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Button asChild className="rounded bg-primary px-8 py-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90">
-                <Link to="/marketplace">Explore Shops</Link>
+                <Link to="/marketplace">Find Salons</Link>
               </Button>
               <Button asChild variant="outline" className="rounded border-border px-8 py-6 text-xs font-bold uppercase tracking-widest text-foreground hover:bg-white/5">
-                <Link to="/partner">Become Partner</Link>
+                <Link to="/partner">Register Your Salon</Link>
               </Button>
             </div>
           </motion.div>
@@ -102,7 +102,13 @@ export default function Home() {
       </section>
 
       {/* Stats/Independent Shops */}
-      <section className="md:col-span-2 md:row-span-2 rounded-[16px] border border-border bg-card p-6 md:p-8 flex flex-col justify-between">
+      <motion.section 
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="md:col-span-2 md:row-span-2 rounded-[16px] border border-border/80 bg-card/90 backdrop-blur-xl p-6 md:p-8 flex flex-col justify-between shadow-2xl"
+      >
         <div>
           <div className="flex items-center justify-between mb-6">
             <div className="flex flex-col">
@@ -135,24 +141,25 @@ export default function Home() {
               featuredShops.map((shop, i) => (
                 <motion.div
                   key={shop.id || shop.slug || i}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08, duration: 0.3 }}
+                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.09, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <Link 
                     to={`/shop/${shop.slug}`}
-                    className="flex items-center gap-4 p-3.5 rounded-xl border border-border/60 bg-background/40 hover:border-primary/60 hover:bg-primary/[0.04] transition-all group shadow-sm hover:shadow-md"
+                    className="flex items-center gap-4 p-3.5 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl hover:border-primary/40 hover:bg-white/[0.08] transition-all duration-500 group shadow-lg hover:shadow-[0_20px_40px_rgba(212,175,55,0.08)] hover:scale-[1.015]"
                   >
-                    <div className="h-14 w-14 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0 border border-border/80 overflow-hidden group-hover:border-primary/50 transition-colors">
+                    <div className="h-14 w-14 rounded-xl bg-zinc-900/80 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/15 overflow-hidden group-hover:border-primary/50 group-hover:scale-105 group-hover:drop-shadow-[0_6px_14px_rgba(212,175,55,0.2)] transition-all duration-500">
                       {shop.logo ? (
                         <img 
                           src={shop.logo} 
                           alt={shop.name} 
-                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           referrerPolicy="no-referrer" 
                         />
                       ) : (
-                        <Store className="h-6 w-6 text-primary" />
+                        <Store className="h-6 w-6 text-primary group-hover:scale-105 transition-transform duration-500" />
                       )}
                     </div>
                     
@@ -206,29 +213,40 @@ export default function Home() {
             Browse directory →
           </Link>
         </div>
-      </section>
+      </motion.section>
 
       {/* CTA Section */}
-      <section className="md:col-span-2 md:row-span-1 rounded-[16px] border border-border bg-card p-8 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+      <motion.section 
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+        className="md:col-span-2 md:row-span-1 rounded-[16px] border border-border/80 bg-card/90 backdrop-blur-xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative group shadow-xl"
+      >
         <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="max-w-sm relative z-10">
           <h2 className="mb-2 text-2xl font-serif text-primary">
-            Ready for your transformation?
+            Looking for a Great Haircut or Hair Treatment?
           </h2>
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-70">
-            Join our exclusive clientele in Mumbai.
+            Book your appointment at top salons in Mumbai today.
           </p>
         </div>
         <Button asChild className="relative z-10 rounded bg-primary px-8 py-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 whitespace-nowrap shadow-xl shadow-primary/10">
           <Link to="/marketplace" className="flex items-center gap-2">
-            Get Started <ArrowRight className="h-4 w-4" />
+            Find Salons Now <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
-      </section>
+      </motion.section>
 
       {/* Seasonal Promotions Carousel (Festive & Bridal Showcase) */}
       <div className="md:col-span-4 mt-6 mb-4">
         <SeasonalPromotionsCarousel />
+      </div>
+
+      {/* Curated Services Section with High-Quality Category Imagery */}
+      <div className="md:col-span-4 my-8">
+        <ServicesSection showTitle={true} />
       </div>
 
       {/* Customer Testimonials & Verified Social Proof Slider */}
@@ -253,10 +271,10 @@ export default function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
             <div className="absolute bottom-10 left-10 right-10">
-              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] mb-2 block">The Craft</span>
-              <h3 className="text-4xl font-light text-white tracking-tight leading-none mb-6">THE ART OF <br /><span className="italic font-serif">MODERN GROOMING</span></h3>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] mb-2 block">Our Hair & Beard Care</span>
+              <h3 className="text-4xl font-light text-white tracking-tight leading-none mb-6">EXPERT SALON & <br /><span className="italic font-serif">GROOMING SERVICES</span></h3>
               <Button asChild variant="outline" className="rounded-none border-white/20 text-white hover:bg-white hover:text-black uppercase text-[10px] tracking-widest font-bold px-8 h-12">
-                <Link to="/services">Explore The Menu</Link>
+                <Link to="/services">View All Services</Link>
               </Button>
             </div>
           </motion.div>
@@ -272,14 +290,14 @@ export default function Home() {
             </div>
             
             <div className="relative z-10">
-              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] mb-4 block">Reservation</span>
-              <h2 className="text-5xl font-light text-white tracking-tight leading-none mb-8">ELEVATE YOUR <br /><span className="italic text-primary font-serif">PRESENCE</span></h2>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em] mb-4 block">Easy Booking</span>
+              <h2 className="text-5xl font-light text-white tracking-tight leading-none mb-8">BOOK YOUR <br /><span className="italic text-primary font-serif">APPOINTMENT</span></h2>
               
               <div className="space-y-6 mb-12">
                 {[
-                  { label: "Master Consultation", desc: "Expert analysis of your features and style." },
-                  { label: "Precision Execution", desc: "Technical mastery in every stroke." },
-                  { label: "Premium Aftercare", desc: "Curated products for lasting results." }
+                  { label: "Style Advice", desc: "Expert recommendations for your look and hair type." },
+                  { label: "Expert Haircut & Care", desc: "Clean cuts and professional styling by trained stylists." },
+                  { label: "Quality Products", desc: "Best hair and beard products for long-lasting results." }
                 ].map((item, idx) => (
                   <div key={idx} className="flex gap-4 items-start">
                     <div className="h-5 w-5 rounded-full border border-primary/50 flex items-center justify-center shrink-0 mt-1">
@@ -296,9 +314,9 @@ export default function Home() {
 
             <div className="relative z-10">
               <Button asChild className="w-full h-16 rounded-none bg-primary text-black hover:bg-primary/90 text-xs font-bold uppercase tracking-[0.3em] shadow-2xl shadow-primary/20">
-                <Link to="/book">Secure Your Appointment</Link>
+                <Link to="/book">Book Appointment Now</Link>
               </Button>
-              <p className="text-[10px] text-zinc-600 text-center mt-4 tracking-widest uppercase">Limited Daily Availability • Mumbai Central</p>
+              <p className="text-[10px] text-zinc-600 text-center mt-4 tracking-widest uppercase">Instant Confirmation • Easy Cancellation • Mumbai</p>
             </div>
           </motion.div>
         </div>

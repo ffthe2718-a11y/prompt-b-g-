@@ -76,11 +76,11 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-border bg-gradient-to-b from-background via-card/50 to-zinc-950 pt-16 pb-12 px-6 relative overflow-hidden">
+    <footer className="border-t border-border bg-gradient-to-b from-background via-card/50 to-zinc-950 pt-16 pb-12 px-4 sm:px-8 lg:px-12 relative overflow-hidden w-full">
       {/* Background Decorative Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="mx-auto max-w-7xl relative z-10">
+      <div className="mx-auto w-full max-w-[1800px] relative z-10">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 mb-12">
           {/* Brand & Social Column */}
           <div className="lg:col-span-4 space-y-6">
@@ -88,16 +88,16 @@ export default function Footer() {
               <div className="flex items-center gap-2">
                 <Scissors className="h-6 w-6 text-primary rotate-45 group-hover:rotate-90 transition-transform duration-500" />
                 <span className="text-2xl md:text-3xl font-serif tracking-[0.15em] uppercase text-primary font-bold">
-                  Aurelia Luxe
+                  Aurelia Salon
                 </span>
               </div>
               <span className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-mono block mt-1">
-                Haute Coiffure & Luxury Grooming • Mumbai
+                Top Haircuts, Beauty & Bridal Salon • Mumbai
               </span>
             </Link>
 
             <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">
-              Experience bespoke hair artistry, master bridal couture, and traditional Ayurvedic Champi in Mumbai's most prestigious salon ateliers.
+              Get top haircuts, beard grooming, HD bridal makeup, and relaxing herbal oil Champi head massages across top salon branches in Mumbai.
             </p>
 
             {/* Social Engagement Community Box */}
@@ -186,11 +186,11 @@ export default function Footer() {
           {/* Flagship Mumbai Ateliers */}
           <div className="lg:col-span-3 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground border-l-2 border-primary pl-3">
-              Flagship Ateliers
+              Our Mumbai Branches
             </h4>
             <div className="space-y-3 text-xs text-muted-foreground">
               <div className="p-3 rounded-xl border border-zinc-900 bg-background/50 space-y-1">
-                <p className="font-bold text-white text-xs">Bandra Flagship Atelier</p>
+                <p className="font-bold text-white text-xs">Bandra Salon Branch</p>
                 <p className="flex items-center gap-1 text-[11px] text-zinc-400">
                   <MapPin className="h-3 w-3 text-primary shrink-0" />
                   101 Turner Road, Bandra West, Mumbai
@@ -198,20 +198,46 @@ export default function Footer() {
               </div>
 
               <div className="p-3 rounded-xl border border-zinc-900 bg-background/50 space-y-1">
-                <p className="font-bold text-white text-xs">Colaba Heritage Lounge</p>
+                <p className="font-bold text-white text-xs">Colaba Salon Branch</p>
                 <p className="flex items-center gap-1 text-[11px] text-zinc-400">
                   <MapPin className="h-3 w-3 text-primary shrink-0" />
                   Arthur Bunder Road, Colaba, Mumbai
                 </p>
               </div>
 
-              <div className="pt-1 flex items-center gap-4 text-xs">
-                <a href="tel:+919876543210" className="flex items-center gap-1.5 text-zinc-300 hover:text-primary transition-colors">
-                  <Phone className="h-3.5 w-3.5 text-primary" /> +91 98765 43210
+              <div className="pt-1 flex flex-col gap-3">
+                <a href="tel:+919876543210" className="flex items-center gap-2 text-zinc-300 hover:text-primary transition-colors text-xs font-mono">
+                  <Phone className="h-3.5 w-3.5 text-primary" />
+                  <span>Call Us: +91 98765 43210</span>
                 </a>
-                <a href={`https://wa.me/${SALON_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-emerald-400 hover:underline">
-                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                </a>
+
+                {/* Direct Front Desk WhatsApp Chat Card */}
+                <div className="p-3.5 rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-zinc-950 to-zinc-950 space-y-2.5 shadow-xl">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                      <MessageCircle className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
+                        <span>Mumbai Front Desk</span>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Front Desk Online" />
+                      </h5>
+                      <p className="text-[10px] text-emerald-300/80 font-mono">Live WhatsApp Help</p>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-zinc-300 leading-relaxed font-light">
+                    Have questions about prices, available slots, or home service in Mumbai? Chat directly with our front desk.
+                  </p>
+                  <a
+                    href={`https://wa.me/${SALON_WHATSAPP.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Namaste! I would like to ask a question about salon services and availability in Mumbai.")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/50 hover:scale-[1.02]"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>Chat with Us</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

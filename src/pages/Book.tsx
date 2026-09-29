@@ -131,6 +131,86 @@ export default function Book() {
     }
   }, [promoParam]);
 
+  // Seasonal promotion validation handler
+  const validateAndApplyPromoCode = (codeToTest?: string) => {
+    const rawCode = (codeToTest !== undefined ? codeToTest : promoCodeInput).trim().toUpperCase();
+    if (!rawCode) {
+      toast.error("Please enter a promo code");
+      return;
+    }
+
+    // Match against active seasonal promotions
+    const match = SEASONAL_PROMOTIONS.find(
+      p => p.promoCode.toUpperCase() === rawCode
+    );
+
+    if (match) {
+      // Validate expiration date
+      if (match.validUntil && new Date(match.validUntil) < new Date()) {
+        toast.error(`Promo code "${rawCode}" expired on ${format(new Date(match.validUntil), "MMM d, yyyy")}.`);
+        return;
+      }
+
+      setAppliedPromotion(match);
+      setPromoCodeInput(match.promoCode);
+      const discountPct = match.discountPercentage || 25;
+      const targetBase = selectedServiceObj?.price || 1500;
+      const discountAmt = Math.round((targetBase * discountPct) / 100);
+
+      toast.success(`Active Seasonal Promo "${match.promoCode}" Applied!`, {
+        description: `${discountPct}% discount (-₹${discountAmt.toLocaleString("en-IN")}) applied to your subtotal.`
+      });
+      return;
+    }
+
+    // Additional active seasonal codes
+    if (rawCode === "AURELIA20") {
+      const genericPromo = {
+        id: "aurelia-20",
+        title: "Aurelia Luxe Seasonal Privilege (20% OFF)",
+        promoCode: "AURELIA20",
+        discountPercentage: 20,
+        originalPrice: 1500,
+        discountedPrice: 1200,
+        badgeText: "20% Seasonal Savings",
+      };
+      setAppliedPromotion(genericPromo);
+      setPromoCodeInput("AURELIA20");
+      toast.success("Promo code 'AURELIA20' Applied!", {
+        description: "20% discount applied to your appointment subtotal."
+      });
+      return;
+    }
+
+    if (rawCode === "WELCOME10") {
+      const genericPromo = {
+        id: "welcome-10",
+        title: "New Client Welcome Privilege (10% OFF)",
+        promoCode: "WELCOME10",
+        discountPercentage: 10,
+        originalPrice: 1500,
+        discountedPrice: 1350,
+        badgeText: "10% Welcome Savings",
+      };
+      setAppliedPromotion(genericPromo);
+      setPromoCodeInput("WELCOME10");
+      toast.success("Promo code 'WELCOME10' Applied!", {
+        description: "10% discount applied to your appointment subtotal."
+      });
+      return;
+    }
+
+    toast.error(`Invalid promo code: "${rawCode}".`, {
+      description: "Please check active seasonal codes like FESTIVEGLOW, ROYALBRIDE25, or MONSOON25."
+    });
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromotion(null);
+    setPromoCodeInput("");
+    toast.info("Promo code removed. Subtotal recalculated.");
+  };
+
   useEffect(() => {
     if (shopId) {
       const getShop = async () => {
@@ -225,14 +305,19 @@ export default function Book() {
     "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM"
   ];
 
-  // Pricing calculations
+  // Pricing & Percentage-based Promotional Calculations
   const selectedServiceObj = allServices.find(s => s.name === formData.service);
-  const baseServicePrice = appliedPromotion?.discountedPrice 
-    ? appliedPromotion.discountedPrice 
-    : (selectedServiceObj?.price || 1500);
+  const rawServicePrice = selectedServiceObj?.price || 1500;
+  
+  // Percentage discount calculation from applied promotion
+  const promoDiscountPercentage = appliedPromotion ? (appliedPromotion.discountPercentage || 0) : 0;
+  const promoDiscountAmount = appliedPromotion 
+    ? Math.round((rawServicePrice * promoDiscountPercentage) / 100) 
+    : 0;
 
+  const baseServicePrice = rawServicePrice;
   const referralDiscountAmount = appliedReferral ? 500 : 0;
-  const subtotalPrice = Math.max(0, baseServicePrice - referralDiscountAmount);
+  const subtotalPrice = Math.max(0, baseServicePrice - promoDiscountAmount - referralDiscountAmount);
 
   const distanceCalc = calculateHomeServiceFee(distanceKm);
   const homeServiceFee = serviceType === 'home' ? distanceCalc.fee : 0;
@@ -306,13 +391,15 @@ export default function Book() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         service: formData.service,
+        rawServicePrice: baseServicePrice,
         time: formData.time,
         notes: formData.address || "",
         stylist: selectedStylist || "Any Available Specialist",
         shopId: shopId || "aurelia-luxe-main",
         promoCode: appliedPromotion?.promoCode || null,
         promotionalOffer: appliedPromotion?.title || null,
-        discountPercentage: appliedPromotion?.discountPercentage || null,
+        discountPercentage: promoDiscountPercentage || null,
+        promoDiscountAmount: promoDiscountAmount,
         referralCode: activeReferralCode,
         referralDiscount: referralDiscountAmount,
         serviceType,
@@ -525,8 +612,8 @@ export default function Book() {
   };
 
   return (
-    <div className="bg-background py-24 px-6">
-      <div className="mx-auto max-w-7xl">
+    <div className="bg-background py-16 px-4 sm:px-8 lg:px-12 w-full">
+      <div className="mx-auto w-full max-w-[1800px]">
         <div className="grid grid-cols-1 gap-24 lg:grid-cols-2">
           {/* Left Side: Info */}
           <motion.div
@@ -1704,35 +1791,154 @@ export default function Book() {
               </div>
 
               {/* Comprehensive Financial Pricing Breakdown & Mandatory 25% Advance Calculation Card */}
-              <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-zinc-950 via-card to-card p-6 shadow-xl space-y-4">
+              <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-zinc-950 via-card to-card p-6 shadow-xl space-y-5">
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                   <div className="flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-primary" />
                     <span className="text-xs uppercase font-bold tracking-widest text-white">
-                      Transparent Pricing Breakdown
+                      Booking Summary & Payment Breakdown
                     </span>
                   </div>
                   <Badge variant="outline" className="text-[10px] border-primary/40 text-primary font-mono uppercase">
-                    Mandatory 25% Rule
+                    25% Advance Payment
                   </Badge>
                 </div>
 
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between items-center text-zinc-300">
-                    <span>1. Subtotal ({formData.service || "Selected Service"}):</span>
-                    <span className="font-mono font-semibold text-white">₹{subtotalPrice.toLocaleString("en-IN")}</span>
+                {/* Promo Code Input Field & Seasonal Validation Section */}
+                <div className="p-4 rounded-xl border border-border/80 bg-background/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] uppercase tracking-wider font-bold text-zinc-300 flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5 text-primary" />
+                      <span>Seasonal Promo Code</span>
+                    </Label>
+                    {appliedPromotion ? (
+                      <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] uppercase font-bold tracking-wider">
+                        {promoDiscountPercentage}% Discount Applied
+                      </Badge>
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 font-mono">Seasonal savings available</span>
+                    )}
                   </div>
 
+                  {appliedPromotion ? (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/40 text-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-7 w-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                          <Percent className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-white text-sm tracking-wide">
+                              {appliedPromotion.promoCode}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-1.5 py-0.2 rounded">
+                              {promoDiscountPercentage}% OFF
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-emerald-300/80 truncate">
+                            {appliedPromotion.title || "Seasonal Promotion"} • Saves ₹{promoDiscountAmount.toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemovePromoCode}
+                        className="h-7 text-[10px] text-zinc-400 hover:text-red-400 hover:bg-red-500/10 px-2 shrink-0 uppercase font-semibold"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 pointer-events-none" />
+                          <Input
+                            type="text"
+                            placeholder="Enter Promo Code (e.g. FESTIVEGLOW, ROYALBRIDE25)..."
+                            value={promoCodeInput}
+                            onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                validateAndApplyPromoCode();
+                              }
+                            }}
+                            className="pl-9 h-10 text-xs font-mono uppercase bg-zinc-900/90 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-primary/50"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => validateAndApplyPromoCode()}
+                          className="h-10 px-4 bg-primary text-black hover:bg-primary/90 text-xs font-bold uppercase tracking-wider shrink-0"
+                        >
+                          Apply Code
+                        </Button>
+                      </div>
+
+                      {/* Active Seasonal Code Quick Chips */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-1 mr-1">
+                          <Sparkles className="h-3 w-3 text-amber-400" /> Active:
+                        </span>
+                        {SEASONAL_PROMOTIONS.map((sp) => (
+                          <button
+                            key={sp.promoCode}
+                            type="button"
+                            onClick={() => validateAndApplyPromoCode(sp.promoCode)}
+                            className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-zinc-900 border border-zinc-700 hover:border-primary/60 text-zinc-300 hover:text-primary transition-all flex items-center gap-1"
+                            title={`${sp.title} (${sp.discountPercentage}% Discount)`}
+                          >
+                            <span>{sp.promoCode}</span>
+                            <span className="text-primary font-bold">({sp.discountPercentage}%)</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Detailed Line Item Cost Breakdown */}
+                <div className="space-y-2.5 text-xs pt-1">
+                  <div className="flex justify-between items-center text-zinc-300">
+                    <span>1. Base Service Price ({formData.service || "Selected Service"}):</span>
+                    <span className="font-mono font-semibold text-white">₹{rawServicePrice.toLocaleString("en-IN")}</span>
+                  </div>
+
+                  {appliedPromotion && (
+                    <div className="flex justify-between items-center text-emerald-400 text-[11px] bg-emerald-950/20 px-2 py-1 rounded border border-emerald-500/20">
+                      <span className="flex items-center gap-1.5">
+                        <Tag className="h-3 w-3 text-emerald-400" />
+                        <span>Seasonal Promo Discount ({appliedPromotion.promoCode} • {promoDiscountPercentage}% OFF):</span>
+                      </span>
+                      <span className="font-mono font-bold">-₹{promoDiscountAmount.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
+
                   {appliedReferral && (
-                    <div className="flex justify-between items-center text-emerald-400 text-[11px]">
-                      <span>• VIP Referral Welcome Credit ({appliedReferral.code}):</span>
+                    <div className="flex justify-between items-center text-emerald-400 text-[11px] bg-emerald-950/20 px-2 py-1 rounded border border-emerald-500/20">
+                      <span className="flex items-center gap-1.5">
+                        <Gift className="h-3 w-3 text-emerald-400" />
+                        <span>VIP Referral Welcome Credit ({appliedReferral.code}):</span>
+                      </span>
                       <span className="font-mono font-bold">-₹500</span>
+                    </div>
+                  )}
+
+                  {(appliedPromotion || appliedReferral) && (
+                    <div className="flex justify-between items-center text-zinc-300 font-medium pt-1 border-t border-zinc-800/60">
+                      <span>2. Net Service Subtotal:</span>
+                      <span className="font-mono font-semibold text-white">₹{subtotalPrice.toLocaleString("en-IN")}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center text-zinc-300">
                     <span className="flex items-center gap-1.5">
-                      <span>2. Home Service Charge:</span>
+                      <span>{appliedPromotion || appliedReferral ? "3." : "2."} Home Service Charge:</span>
                       {serviceType === 'home' && (
                         <span className="text-[10px] font-mono text-amber-400">({distanceKm} km)</span>
                       )}
@@ -1742,35 +1948,35 @@ export default function Book() {
                     </span>
                   </div>
 
-                  <div className="pt-2 border-t border-zinc-800 flex justify-between items-center text-sm font-bold text-white">
-                    <span>3. Total Booking Value:</span>
-                    <span className="font-serif text-primary text-base">₹{totalAmount.toLocaleString("en-IN")}</span>
+                  <div className="pt-2.5 border-t border-zinc-800 flex justify-between items-center text-sm font-bold text-white">
+                    <span>{appliedPromotion || appliedReferral ? "4." : "3."} Total Booking Value:</span>
+                    <span className="font-serif text-primary text-base font-bold">₹{totalAmount.toLocaleString("en-IN")}</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-primary/10 border border-primary/30 flex justify-between items-center text-xs">
+                  <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/30 flex justify-between items-center text-xs">
                     <div>
                       <span className="font-bold text-white flex items-center gap-1">
-                        <span>4. Mandatory Advance Required:</span>
-                        <Badge className="bg-primary text-black text-[9px] font-bold h-4 px-1.5">25% OF TOTAL</Badge>
+                        <span>25% Advance Booking Amount:</span>
+                        <Badge className="bg-primary text-black text-[9px] font-bold h-4 px-1.5">25% ADVANCE</Badge>
                       </span>
-                      <span className="text-[10px] text-zinc-400 block mt-0.5">Required to confirm & lock stylist schedule</span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">Pay 25% now to confirm your appointment slot</span>
                     </div>
                     <span className="font-mono text-base font-bold text-primary">₹{advanceRequired.toLocaleString("en-IN")}</span>
                   </div>
 
                   <div className="flex justify-between items-center text-zinc-400 text-[11px] pt-1">
-                    <span>5. Remaining Balance Due at Time of Service (75%):</span>
+                    <span>Remaining 75% Payment at Salon:</span>
                     <span className="font-mono font-semibold text-zinc-300">₹{remainingAmount.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 
-                {/* Mandatory Advance Warning Notice Banner */}
+                {/* Advance Payment Notice Banner */}
                 <div className="rounded-xl border border-amber-500/40 bg-amber-950/20 p-3 flex items-start gap-2.5 text-xs text-amber-300">
                   <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
-                    <p className="font-bold text-white">Booking Policy & Deposit Notice:</p>
+                    <p className="font-bold text-white">Advance Payment Notice:</p>
                     <p className="text-[11px] text-amber-200/90 mt-0.5">
-                      "Booking is not confirmed until 25% advance payment is completed." Appointments without deposit remain in <em>Pending Deposit</em> status.
+                      Your appointment is confirmed as soon as the 25% advance payment is completed. Remaining 75% can be paid at the salon after your service.
                     </p>
                   </div>
                 </div>

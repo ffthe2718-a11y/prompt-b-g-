@@ -71,31 +71,31 @@ import { format } from "date-fns";
 const REWARD_PERKS: RewardPerk[] = [
   {
     id: "perk-250",
-    title: "₹250 Direct Booking Credit",
+    title: "₹250 Instant Discount",
     pointsCost: 250,
     valueText: "₹250 OFF",
     category: "discount",
-    description: "Instant deduction applied at checkout for any atelier hair, facial, or grooming treatment.",
+    description: "Instant ₹250 discount applied at checkout for any haircut, facial, or grooming service.",
     iconName: "BadgePercent",
     code: "REF250-CASH"
   },
   {
     id: "perk-500",
-    title: "₹500 VIP Atelier Voucher",
+    title: "₹500 Special Discount Voucher",
     pointsCost: 500,
     valueText: "₹500 OFF",
     category: "discount",
-    description: "Applicable on any signature couture, balayage, or bridal bundle appointment.",
+    description: "Applicable on any hair coloring, keratin, or bridal makeup package.",
     iconName: "Coins",
     code: "VIP500-LUXE"
   },
   {
     id: "perk-750",
-    title: "Kérastase Caviar Hair Therapy",
+    title: "Free Hair Spa Treatment",
     pointsCost: 750,
     valueText: "₹1,800 Value",
     category: "service",
-    description: "Complimentary revitalizing deep-conditioning scalp and fiber infusion treatment.",
+    description: "Free deep conditioning hair spa treatment during your salon visit.",
     iconName: "Sparkles",
     code: "KERASTASE-FREE"
   },
@@ -366,7 +366,7 @@ export default function ReferralDashboard() {
       {/* Hero Header */}
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card via-background to-background py-16 md:py-24">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(212,175,55,0.08),transparent_70%)] pointer-events-none" />
-        <div className="mx-auto max-w-7xl px-6 relative z-10">
+        <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-8 lg:px-12 relative z-10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-primary mb-4">
@@ -378,9 +378,9 @@ export default function ReferralDashboard() {
                 <span className="italic text-primary font-normal">Earn Loyalty Points.</span>
               </h1>
               <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                Invite friends and family to indulge in Aurelia Luxe’s signature hair, couture, and bridal treatments. 
-                They receive an exclusive <span className="text-foreground font-semibold">₹500 welcome reward</span>, 
-                and you earn <span className="text-primary font-semibold">250 Loyalty Points</span> for every confirmed booking.
+                Invite friends and family to Aurelia Beauty & Hair Salon. 
+                They receive an exclusive <span className="text-foreground font-semibold">₹500 welcome discount</span>, 
+                and you earn <span className="text-primary font-semibold">250 Reward Points</span> for every confirmed booking.
               </p>
             </div>
 
@@ -408,7 +408,7 @@ export default function ReferralDashboard() {
       </section>
 
       {/* Main Content Area */}
-      <div className="mx-auto max-w-7xl px-6 -mt-6">
+      <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-8 lg:px-12 -mt-6">
         {/* Top Invite Generator Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

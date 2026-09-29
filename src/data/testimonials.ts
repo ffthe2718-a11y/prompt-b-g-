@@ -7,7 +7,7 @@ export interface Testimonial {
   reviewTitle: string;
   content: string;
   treatment: string;
-  serviceCategory: "Hair & Balayage" | "Bridal & Couture" | "Grooming & Shave" | "Skincare & Spa";
+  serviceCategory: "Hair & Balayage" | "Bridal & Wedding" | "Grooming & Shave" | "Skincare & Spa";
   stylistName: string;
   shopName: string;
   verifiedVisitDate: string;
@@ -22,15 +22,15 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     location: "Bandra West, Mumbai",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    reviewTitle: "The most luminous Balayage I have ever had!",
-    content: "Aurelia Luxe completely elevated my hair. The master colorist took time to understand my skin tone before creating the bespoke caramel balayage. 4 months later and the blend is still seamless and healthy. Truly world-class salon artistry in Bandra.",
-    treatment: "Bespoke Dimensional Balayage & Keratin Infusion",
+    reviewTitle: "Best Hair Highlights & Haircut experience!",
+    content: "Aurelia Beauty & Hair Salon did an amazing job with my hair. The hair stylist took time to understand my face shape and suggested a customized caramel highlight. 4 months later and my hair still looks soft, healthy, and shiny.",
+    treatment: "Custom Hair Highlights & Keratin Care",
     serviceCategory: "Hair & Balayage",
     stylistName: "Aarav Sharma",
-    shopName: "Aurelia Flagship Atelier",
+    shopName: "Aurelia Family Salon & Spa",
     verifiedVisitDate: "Verified Visit • September 2026",
     isVerifiedClient: true,
-    highlightPerk: "Complimentary Olaplex Scalp Shield included"
+    highlightPerk: "Free Scalp Care Massage included"
   },
   {
     id: "test-2",
@@ -38,15 +38,15 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     location: "Worli, Mumbai",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    reviewTitle: "Executive Beard Sculpting & Straight Razor Perfection",
-    content: "The hot towel straight razor shave paired with the charcoal skin therapy was top tier. The attention to detail on the beard fading is razor sharp. The private lounge atmosphere makes it my weekly ritual before corporate meetings.",
-    treatment: "Royal Hot Towel Shave & Beard Sculpting",
+    reviewTitle: "Men's Beard Shaping & Razor Shave Perfection",
+    content: "The hot towel razor shave and charcoal facial clean-up was super relaxing. Great attention to detail on beard line shaping. Clean environment and friendly staff.",
+    treatment: "Hot Towel Razor Shave & Beard Shaping",
     serviceCategory: "Grooming & Shave",
     stylistName: "Kabir Mehta",
-    shopName: "Royale Heritage Barber & Lounge",
+    shopName: "Royal Touch Barber & Men's Salon",
     verifiedVisitDate: "Verified Visit • September 2026",
     isVerifiedClient: true,
-    highlightPerk: "Artisanal Single-Origin Espresso served"
+    highlightPerk: "Complimentary Hot Coffee served"
   },
   {
     id: "test-3",
@@ -54,15 +54,15 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     location: "Juhu, Mumbai",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    reviewTitle: "Flawless Royal Bridal Artistry for our Wedding Weekend",
-    content: "For my wedding at the Taj Mahal Palace, the bridal team worked pure magic. The HD makeup stayed pristine for over 14 hours in Mumbai humidity without a single touch-up, and the organic Rajasthani mehndi stain was breathtakingly deep.",
-    treatment: "Royal Heritage Bridal Package & HD Airbrush",
-    serviceCategory: "Bridal & Couture",
+    reviewTitle: "Beautiful Bridal HD Makeup for my Wedding Day!",
+    content: "For my wedding, the bridal makeup team did magic! The HD bridal makeup stayed fresh for over 14 hours in Mumbai humidity without any touch-ups, and the mehendi color was dark and long-lasting.",
+    treatment: "Shringar Bridal HD Makeup & Mehendi Package",
+    serviceCategory: "Bridal & Wedding",
     stylistName: "Zara Khan",
-    shopName: "Opal & Pearl Bridal Sanctuary",
+    shopName: "Shringar Bridal Studio & Beauty Parlour",
     verifiedVisitDate: "Verified Visit • August 2026",
     isVerifiedClient: true,
-    highlightPerk: "Private Bridal Suite & Champagne High Tea"
+    highlightPerk: "Private Bridal Room & Tea Service"
   },
   {
     id: "test-4",
@@ -70,15 +70,15 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     location: "Lower Parel, Mumbai",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    reviewTitle: "Pure Zen: Ayurvedic Warm Oil Champi",
-    content: "The Kansa wand pressure point massage and warm Brahmi oil infusion melted away weeks of corporate burnout. The aromatic herbs and calming environment make this the best wellness sanctuary in the city.",
-    treatment: "Traditional Ayurvedic Champi & Scalp Detox",
+    reviewTitle: "Super Relaxing Ayurvedic Oil Champi Head Massage",
+    content: "The warm herbal oil head massage completely relieved my stress and headache. The soothing oil blend and neck pressure point massage was so relaxing. Highly recommended!",
+    treatment: "Traditional Ayurvedic Champi & Scalp Care",
     serviceCategory: "Skincare & Spa",
     stylistName: "Devika Patel",
-    shopName: "Aurelia Flagship Atelier",
+    shopName: "Aurelia Family Salon & Spa",
     verifiedVisitDate: "Verified Visit • September 2026",
     isVerifiedClient: true,
-    highlightPerk: "Custom Botanical Oil blend to take home"
+    highlightPerk: "Free Herbal Oil Sample to take home"
   },
   {
     id: "test-5",
@@ -86,15 +86,15 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     location: "Colaba, Mumbai",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    reviewTitle: "Precision Scissor Work & Scalp Rejuvenation",
-    content: "Finding a stylist who understands texture and movement without over-thinning is rare. The consultation alone was worth it, and the peppermint scalp wash was deeply invigorating. 10/10 service.",
-    treatment: "Signature Executive Haircut & Charcoal Scalp Wash",
+    reviewTitle: "Great Men's Haircut & Head Wash",
+    content: "Finding a barber who understands hair texture without thinning too much is hard. The haircut was precise, and the scalp wash was super refreshing. 10/10 service.",
+    treatment: "Men's Precision Haircut & Scalp Wash",
     serviceCategory: "Grooming & Shave",
     stylistName: "Kabir Mehta",
-    shopName: "Royale Heritage Barber & Lounge",
+    shopName: "Royal Touch Barber & Men's Salon",
     verifiedVisitDate: "Verified Visit • August 2026",
     isVerifiedClient: true,
-    highlightPerk: "VIP Express Booking & Reserved Valet"
+    highlightPerk: "Easy Advance Booking & Parking Available"
   },
   {
     id: "test-6",
@@ -102,14 +102,14 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
     location: "Powai, Mumbai",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    reviewTitle: "Instant Glass Skin with 24K Gold Revival",
-    content: "My skin was radiant and deeply nourished before an international gala. The facialist used ultrasonic infusion and pure 24K leaf masks. No redness, only pure luxury glow.",
-    treatment: "24K Gold Revival Facial & Ultrasonic Infusion",
+    reviewTitle: "Instant Glow with 24K Gold Facial",
+    content: "My skin felt super soft and glowing before my cousin's reception. The facial included deep cleaning and a real 24K gold mask. Natural shine with no redness!",
+    treatment: "24K Gold Facial & Deep Cleaning",
     serviceCategory: "Skincare & Spa",
     stylistName: "Devika Patel",
-    shopName: "Elysian Glow & Balayage Bar",
+    shopName: "Glow & Style Family Salon",
     verifiedVisitDate: "Verified Visit • September 2026",
     isVerifiedClient: true,
-    highlightPerk: "Includes LED Collagen therapy session"
+    highlightPerk: "Includes Vitamin C Glow Mask"
   }
 ];

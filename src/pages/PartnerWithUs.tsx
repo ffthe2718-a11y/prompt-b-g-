@@ -143,8 +143,8 @@ export default function PartnerWithUs() {
   const ActiveIcon = STEPS[currentStep].icon;
 
   return (
-    <div className="min-h-screen bg-black text-white pt-24 pb-12 px-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-black text-white pt-16 pb-12 px-4 sm:px-8 lg:px-12 w-full">
+      <div className="w-full max-w-[1400px] mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-primary text-black uppercase tracking-widest text-[10px] py-1 px-3">Partner With Us</Badge>
           <h1 className="text-5xl font-light tracking-tighter sm:text-6xl mb-4">

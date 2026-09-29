@@ -106,7 +106,7 @@ export default function BundledServices() {
         email: prev.email || user.email || ""
       }));
     }
-  }, [user]);
+  }, [user?.uid, user?.displayName, user?.email]);
 
   // Handle URL deep-linking e.g., ?bundle=bridal-glow-package
   React.useEffect(() => {
@@ -303,7 +303,7 @@ export default function BundledServices() {
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card/80 via-background to-background pt-20 pb-16 px-6">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
         
-        <div className="mx-auto max-w-7xl relative z-10 text-center">
+        <div className="mx-auto w-full max-w-[1800px] relative z-10 text-center px-4 sm:px-8 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -312,17 +312,15 @@ export default function BundledServices() {
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase mb-6 shadow-sm">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Multi-Service Packages & Exclusive Bundles</span>
+              <span>Special Packages & Combo Offers</span>
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight mb-6">
-              BUNDLED <span className="italic font-serif text-primary">SERVICES</span> & RITUALS
+              SPECIAL <span className="italic font-serif text-primary">PACKAGES</span> & COMBOS
             </h1>
 
             <p className="max-w-2xl text-sm md:text-base text-muted-foreground leading-relaxed font-light mb-8">
-              Experience seamless, synchronized beauty journeys. Combine master styling, 
-              ceremonial bridal makeup, 24K gold skin therapies, and Ayurvedic wellness 
-              at exclusive package savings of up to 26%.
+              Combine haircuts, bridal makeup, facials, and Ayurvedic Champi head massage to get special combo discounts up to 26% off!
             </p>
 
             {/* Quick Metrics Bar */}
@@ -378,7 +376,7 @@ export default function BundledServices() {
       </section>
 
       {/* Main Content Area */}
-      <div className="mx-auto max-w-7xl px-6 pt-12">
+      <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-8 lg:px-12 pt-12">
         {activeTab === 'curated' ? (
           <div>
             {/* FEATURED SPOTLIGHT: The Royal Bridal Glow Package */}
@@ -546,13 +544,15 @@ export default function BundledServices() {
 
             {/* Grid of Other Curated Bundles */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredCuratedBundles.map((bundle) => (
+              {filteredCuratedBundles.map((bundle, idx) => (
                 <motion.div
                   key={bundle.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col justify-between group hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
+                  initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-30px" }}
+                  transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ y: -6, scale: 1.015 }}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden flex flex-col justify-between group hover:border-primary/50 transition-all duration-500 hover:shadow-[0_20px_45px_rgba(212,175,55,0.08)]"
                 >
                   <div>
                     {/* Image Header */}
@@ -562,9 +562,9 @@ export default function BundledServices() {
                         alt={bundle.title}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                       
-                      <div className="absolute top-3 left-3 bg-zinc-900/90 backdrop-blur-md border border-border text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded">
+                      <div className="absolute top-3 left-3 bg-zinc-900/90 backdrop-blur-md border border-white/15 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded">
                         {bundle.categoryLabel}
                       </div>
 

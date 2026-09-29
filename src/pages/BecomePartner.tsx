@@ -108,55 +108,85 @@ export default function BecomePartner() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-          <div className="lg:col-span-2 space-y-8">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-2 space-y-8"
+          >
             <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <Store className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm mb-1 uppercase tracking-wider">Dedicated Storefront</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">Your own branded page with your services, gallery, and availability.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <Shield className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm mb-1 uppercase tracking-wider">Trusted Ecosystem</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">Benefit from our platform's reputation and premium marketing reach.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <Check className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm mb-1 uppercase tracking-wider">Instant Onboarding</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">Simple setup process with easy-to-use barber-centric management tools.</p>
-                </div>
-              </div>
+              {[
+                {
+                  icon: Store,
+                  title: "Dedicated Storefront",
+                  desc: "Your own branded page with your services, gallery, and availability."
+                },
+                {
+                  icon: Shield,
+                  title: "Trusted Ecosystem",
+                  desc: "Benefit from our platform's reputation and premium marketing reach."
+                },
+                {
+                  icon: Check,
+                  title: "Instant Onboarding",
+                  desc: "Simple setup process with easy-to-use barber-centric management tools."
+                }
+              ].map((feature, idx) => {
+                const Icon = feature.icon;
+                return (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1, duration: 0.5 }}
+                    className="flex gap-4 p-4 rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-md hover:border-primary/30 transition-all"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-sm mb-1 uppercase tracking-wider text-white">{feature.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{feature.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
 
-            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10">
-              <p className="text-xs italic text-primary/80 leading-relaxed">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-xl"
+            >
+              <p className="text-xs italic text-primary/90 leading-relaxed font-serif">
                 "Since joining Aurelia, my boutique shop's bookings increased by 40%. The platform handles the tech so I can focus on my clients."
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/20" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">— Arjun M., Signature Grooming</span>
+                <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary text-xs font-bold">
+                  AM
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">— Arjun M., Signature Grooming</span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="lg:col-span-3">
-            <Card className="bg-card border-border shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-light">Shop Registration</CardTitle>
-                <CardDescription>Tell us about your business to get started.</CardDescription>
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-3"
+          >
+            <Card className="bg-card/90 backdrop-blur-xl border-border/80 shadow-2xl rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/40 pb-6">
+                <CardTitle className="text-2xl font-light tracking-tight text-white">Shop Registration</CardTitle>
+                <CardDescription>Tell us about your business to get started on Aurelia Luxe.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label className="text-xs uppercase tracking-widest text-muted-foreground">Shop Name</Label>
@@ -164,7 +194,7 @@ export default function BecomePartner() {
                       placeholder="e.g. Royal Cuts Studio"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-background border-border"
+                      className="bg-background/80 border-border"
                       required
                     />
                   </div>
@@ -179,7 +209,7 @@ export default function BecomePartner() {
                         placeholder="royal-cuts"
                         value={formData.slug}
                         onChange={handleSlugChange}
-                        className="bg-background border-border rounded-l-none"
+                        className="bg-background/80 border-border rounded-l-none"
                         required
                       />
                     </div>
@@ -190,10 +220,10 @@ export default function BecomePartner() {
                     <div className="space-y-2">
                       <Label className="text-xs uppercase tracking-widest text-muted-foreground">Location</Label>
                       <Input 
-                        placeholder="e.g. HSR Layout, Bangalore"
+                        placeholder="e.g. Bandra West, Mumbai"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        className="bg-background border-border"
+                        className="bg-background/80 border-border"
                       />
                     </div>
                     <div className="space-y-2">
@@ -202,7 +232,7 @@ export default function BecomePartner() {
                         placeholder="+91 98765 43210"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="bg-background border-border"
+                        className="bg-background/80 border-border"
                         type="tel"
                       />
                     </div>
@@ -214,14 +244,14 @@ export default function BecomePartner() {
                       placeholder="Tell potential clients what makes your shop unique..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="bg-background border-border min-h-[120px]"
+                      className="bg-background/80 border-border min-h-[120px]"
                     />
                   </div>
 
                   <div className="space-y-4">
                     <Label className="text-xs uppercase tracking-widest text-muted-foreground">Shop Logo</Label>
                     <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 rounded-lg bg-zinc-900 border border-border flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="h-16 w-16 rounded-xl bg-zinc-900 border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                         {formData.logo ? (
                           <img src={formData.logo} alt="Preview" className="h-full w-full object-cover" />
                         ) : (
@@ -244,7 +274,7 @@ export default function BecomePartner() {
                         >
                           <label htmlFor="become-logo-upload" className="cursor-pointer flex items-center gap-2">
                             <Upload className="h-3 w-3" />
-                            {formData.logo ? "Change" : "Upload"}
+                            {formData.logo ? "Change Logo" : "Upload Logo"}
                           </label>
                         </Button>
                       </div>
@@ -253,14 +283,14 @@ export default function BecomePartner() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary text-black hover:bg-primary/90 font-bold uppercase tracking-[0.2em] py-6"
+                    className="w-full bg-primary text-black hover:bg-primary/90 font-bold uppercase tracking-[0.2em] py-6 shadow-xl shadow-primary/20 rounded-xl"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        Apply Now
+                        Apply For Partner Access
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </>
                     )}
@@ -268,7 +298,7 @@ export default function BecomePartner() {
                 </form>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

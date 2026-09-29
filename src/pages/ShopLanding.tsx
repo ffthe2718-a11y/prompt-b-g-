@@ -212,106 +212,116 @@ export default function ShopLanding({ previewData }: { previewData?: ShopData })
                   <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
                 </div>
 
-                <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-                  {shop.logo && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.6 }}
-                      className="mb-8 flex justify-center"
-                    >
-                      <div className="h-24 w-24 md:h-32 md:w-32 rounded-full border-2 border-primary/30 p-1.5 bg-black/50 backdrop-blur-sm overflow-hidden shadow-2xl">
-                        <img src={shop.logo} alt={shop.name} className="h-full w-full object-cover rounded-full" />
-                      </div>
-                    </motion.div>
-                  )}
-                  <motion.h1 
-                    initial={{ opacity: 0, y: 20 }}
+                <div className="relative z-10 px-4 max-w-4xl mx-auto flex justify-center">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-6 italic flex items-center justify-center gap-4"
+                    transition={{ duration: 0.8 }}
+                    className="w-full rounded-[28px] bg-white/[0.07] border border-white/20 backdrop-blur-xl p-8 md:p-14 shadow-2xl shadow-black/60 text-center transition-all duration-500 hover:scale-[1.03] hover:border-white/40 hover:shadow-[0_25px_60px_rgba(255,255,255,0.08)] group/card relative overflow-hidden"
                   >
-                    {shop.content.heroTitle || shop.name}
-                    {shop.isVerified && (
+                    {/* Subtle top gloss line */}
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
+
+                    {shop.logo && (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.8 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6 }}
+                        className="mb-8 flex justify-center"
                       >
-                        <ShieldCheck className="h-10 w-10 text-blue-500 fill-blue-500/20" />
+                        <div className="h-24 w-24 md:h-32 md:w-32 rounded-full border-2 border-white/30 p-1.5 bg-black/40 backdrop-blur-md overflow-hidden shadow-2xl transition-all duration-500 group-hover/card:scale-105 group-hover/card:border-white/60 group-hover/card:drop-shadow-[0_10px_25px_rgba(255,255,255,0.2)]">
+                          <img src={shop.logo} alt={shop.name} className="h-full w-full object-cover rounded-full transition-transform duration-500 group-hover/card:scale-105" />
+                        </div>
                       </motion.div>
                     )}
-                  </motion.h1>
-                  <motion.p 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-xl md:text-2xl text-muted-foreground mb-6 font-light tracking-wide"
-                  >
-                    {shop.content.heroSubtitle || shop.description}
-                  </motion.p>
+                    <motion.h1 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 italic flex items-center justify-center gap-3"
+                    >
+                      {shop.content.heroTitle || shop.name}
+                      {shop.isVerified && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.8 }}
+                        >
+                          <ShieldCheck className="h-9 w-9 text-blue-400 fill-blue-500/20 shrink-0" />
+                        </motion.div>
+                      )}
+                    </motion.h1>
+                    <motion.p 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-lg md:text-xl text-zinc-300 mb-6 font-light tracking-wide max-w-2xl mx-auto leading-relaxed"
+                    >
+                      {shop.content.heroSubtitle || shop.description}
+                    </motion.p>
 
-                  {/* Rating preview pill */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex flex-wrap items-center justify-center gap-3 mb-10"
-                  >
-                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-primary/30 backdrop-blur-md">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star 
-                            key={s} 
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              s <= Math.round(shop.rating || 5)
-                                ? "text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
-                                : "text-zinc-700"
-                            )} 
-                          />
-                        ))}
+                    {/* Rating preview pill */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex flex-wrap items-center justify-center gap-3 mb-8"
+                    >
+                      <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.06] border border-white/15 backdrop-blur-md shadow-sm">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star 
+                              key={s} 
+                              className={cn(
+                                "h-3.5 w-3.5",
+                                s <= Math.round(shop.rating || 5)
+                                  ? "text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
+                                  : "text-zinc-700"
+                              )} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-bold font-mono text-white">
+                          {shop.rating ? shop.rating.toFixed(1) : "5.0"}
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          ({shop.ratingCount || 16} reviews)
+                        </span>
+                        <a 
+                          href="#reviews-section" 
+                          className="text-[11px] text-primary hover:text-white underline underline-offset-4 ml-1.5 transition-colors font-medium"
+                        >
+                          Read Reviews
+                        </a>
+                        <a 
+                          href="#stylists-section" 
+                          className="text-[11px] text-zinc-300 hover:text-primary transition-colors font-medium border-l border-zinc-700 pl-2"
+                        >
+                          Meet Stylists
+                        </a>
                       </div>
-                      <span className="text-xs font-bold font-mono text-white">
-                        {shop.rating ? shop.rating.toFixed(1) : "5.0"}
-                      </span>
-                      <span className="text-[11px] text-zinc-400">
-                        ({shop.ratingCount || 16} reviews)
-                      </span>
-                      <a 
-                        href="#reviews-section" 
-                        className="text-[11px] text-primary hover:text-white underline underline-offset-4 ml-1.5 transition-colors font-medium"
-                      >
-                        Read Reviews
-                      </a>
-                      <a 
-                        href="#stylists-section" 
-                        className="text-[11px] text-zinc-300 hover:text-primary transition-colors font-medium border-l border-zinc-700 pl-2"
-                      >
-                        Meet Stylists
-                      </a>
-                    </div>
-                  </motion.div>
+                    </motion.div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                  >
-                    <Button size="lg" className="bg-primary text-black hover:bg-primary/90 rounded-none px-12 h-16 text-base font-bold uppercase tracking-widest shadow-xl shadow-primary/20 w-full sm:w-auto" asChild>
-                      <Link to={`/book?shopId=${shop.id}`}>
-                        <Calendar className="mr-2 h-5 w-5" />
-                        Book Appointment
-                      </Link>
-                    </Button>
-                    <JoinWaitlistModal
-                      shopName={shop.name}
-                      shopId={shop.id}
-                      serviceName={shop.content?.services?.[0]?.name || "Atelier Master Treatment"}
-                      triggerText="Join Priority Waitlist"
-                      triggerVariant="outline"
-                      triggerClassName="h-16 px-8 rounded-none border-amber-500/40 text-amber-400 hover:bg-amber-400 hover:text-black font-bold uppercase tracking-widest text-sm w-full sm:w-auto"
-                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                    >
+                      <Button size="lg" className="bg-primary text-black hover:bg-primary/90 rounded-full px-10 h-14 text-sm font-bold uppercase tracking-widest shadow-xl shadow-primary/20 w-full sm:w-auto transition-transform hover:scale-105" asChild>
+                        <Link to={`/book?shopId=${shop.id}`}>
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Book Appointment
+                        </Link>
+                      </Button>
+                      <JoinWaitlistModal
+                        shopName={shop.name}
+                        shopId={shop.id}
+                        serviceName={shop.content?.services?.[0]?.name || "Atelier Master Treatment"}
+                        triggerText="Join Priority Waitlist"
+                        triggerVariant="outline"
+                        triggerClassName="h-14 px-8 rounded-full border-white/20 bg-white/[0.04] text-amber-300 hover:bg-white/10 hover:border-amber-400/50 font-bold uppercase tracking-widest text-xs w-full sm:w-auto transition-transform hover:scale-105"
+                      />
+                    </motion.div>
                   </motion.div>
                 </div>
               </section>

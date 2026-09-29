@@ -1,118 +1,52 @@
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
-const services = [
-  {
-    category: "Styling & Cuts",
-    items: [
-      { name: "Signature Haircut", price: "from ₹1,500", desc: "Precision cut, wash, and luxury blow-dry." },
-      { name: "Executive Grooming", price: "from ₹1,000", desc: "Tailored cut for the modern gentleman." },
-      { name: "Traditional Champi", price: "from ₹800", desc: "Relaxing head massage with Ayurvedic oils." },
-    ]
-  },
-  {
-    category: "Bridal & Special Events",
-    items: [
-      { name: "Indian Bridal Makeup", price: "from ₹15,000", desc: "Traditional luxury makeup for the Indian bride." },
-      { name: "Designer Mehndi", price: "from ₹5,000", desc: "Intricate henna artistry for weddings and events." },
-      { name: "Sari Draping", price: "from ₹1,200", desc: "Professional draping in various traditional styles." },
-    ]
-  },
-  {
-    category: "Treatments & Color",
-    items: [
-      { name: "Luxury Keratin", price: "from ₹8,000", desc: "Long-lasting smoothing and frizz reduction." },
-      { name: "Glow Revival Facial", price: "from ₹2,500", desc: "Intense radiance treatment for healthy skin." },
-      { name: "Bespoke Balayage", price: "from ₹5,500", desc: "Hand-painted highlights for a natural look." },
-    ]
-  }
-];
+import { Sparkles, Calendar, ArrowRight, ShieldCheck, Heart } from "lucide-react";
+import ServicesSection from "@/components/ServicesSection";
 
 export default function Services() {
   return (
-    <TooltipProvider>
-      <div className="bg-background py-24 px-6">
-        <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-20 text-center"
-          >
-            <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.5em] text-primary">
-              Our Expertise
+    <div className="bg-background py-16 px-4 sm:px-8 lg:px-12 min-h-screen w-full">
+      <div className="mx-auto w-full max-w-[1800px]">
+        {/* Main Services Section with Category Imagery */}
+        <ServicesSection showTitle={true} />
+
+        {/* Custom Consultation & Bridal Bespoke Inquiries */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-24 rounded-3xl border border-primary/30 bg-gradient-to-br from-card via-background to-primary/5 p-8 sm:p-14 text-center relative overflow-hidden shadow-2xl"
+        >
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <span className="text-xs uppercase tracking-[0.4em] text-primary font-bold block mb-3">
+              Personalized Artistry
             </span>
-            <h1 className="text-5xl font-light tracking-tight md:text-7xl">
-              CURATED <span className="italic text-primary">SERVICES</span>
-            </h1>
-          </motion.div>
-
-          <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">
-            {services.map((section, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <h2 className="mb-8 text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground border-b border-border pb-4">
-                  {section.category}
-                </h2>
-                <div className="space-y-10">
-                  {section.items.map((item, i) => (
-                    <div key={i} className="group cursor-default">
-                      <div className="flex items-baseline justify-between mb-2">
-                        <h3 className="text-lg font-light tracking-wide group-hover:text-primary transition-colors">
-                          {item.name}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3.5 w-3.5 text-zinc-600 cursor-help hover:text-primary transition-colors" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="bg-zinc-900 border-zinc-800 text-white p-3 text-[10px] uppercase tracking-widest leading-relaxed max-w-[200px] shadow-2xl">
-                              <p>{item.desc}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <span className="text-xs font-mono text-primary whitespace-nowrap">{item.price}</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {item.desc}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-24 rounded-[16px] border border-border bg-card p-12 text-center"
-          >
-            <h3 className="mb-4 text-2xl font-serif text-primary">Need a custom consultation?</h3>
-            <p className="mx-auto mb-8 max-w-xl text-muted-foreground">
-              Our stylists are available for one-on-one consultations to help you 
-              achieve your dream look.
+            <h3 className="mb-4 text-3xl sm:text-4xl font-light text-foreground tracking-tight">
+              NEED A <span className="italic font-serif text-primary">CUSTOM CONSULTATION</span>?
+            </h3>
+            <p className="mx-auto mb-8 text-sm text-muted-foreground leading-relaxed">
+              Whether preparing for a royal wedding, seeking a total color makeover, or requesting bespoke at-home salon care in Mumbai, our master artisans provide personalized 1-on-1 consultations.
             </p>
-            <Button asChild className="rounded bg-primary px-10 py-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90">
-              <Link to="/book">Book Consultation</Link>
-            </Button>
-          </motion.div>
-        </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button asChild className="w-full sm:w-auto rounded-full bg-primary px-8 py-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 shadow-xl shadow-primary/20">
+                <Link to="/book" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Book Private Consultation
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full sm:w-auto rounded-full border-border bg-card/60 hover:bg-white/5 px-8 py-6 text-xs font-bold uppercase tracking-widest text-foreground">
+                <Link to="/bundles" className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-400" />
+                  Explore Curated Bundles
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </motion.div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
-

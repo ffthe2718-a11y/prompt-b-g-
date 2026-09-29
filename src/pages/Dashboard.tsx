@@ -41,6 +41,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import AuthModal from "@/components/AuthModal";
+import AppointmentReviewModal from "@/components/AppointmentReviewModal";
 import { exportToCSV } from "@/lib/exportUtils";
 import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 
@@ -102,13 +103,6 @@ export default function Dashboard() {
 
   // Review states for appointment feedback
   const [reviewAppointment, setReviewAppointment] = useState<Appointment | null>(null);
-  const [reviewRating, setReviewRating] = useState<number>(5);
-  const [reviewHoverRating, setReviewHoverRating] = useState<number>(0);
-  const [reviewTitle, setReviewTitle] = useState("");
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewRecommend, setReviewRecommend] = useState(true);
-  const [reviewTags, setReviewTags] = useState<string[]>([]);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [userReviews, setUserReviews] = useState<Record<string, any>>({});
 
   // Proactive 24-hour Appointment Reminders
@@ -477,78 +471,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleToggleReviewTag = (tag: string) => {
-    setReviewTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const handleSubmitAppointmentReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !reviewAppointment) return;
-
-    if (!reviewTitle.trim() || !reviewComment.trim()) {
-      toast.error("Please provide both a review headline and comments.");
-      return;
-    }
-
-    if (reviewComment.trim().length < 15) {
-      toast.error("Please write at least 15 characters to provide helpful details.");
-      return;
-    }
-
-    setIsSubmittingReview(true);
-    try {
-      const targetShopId = reviewAppointment.shopId || "aurelia-luxe-main";
-      await addDoc(collection(db, "reviews"), {
-        shopId: targetShopId,
-        userId: user.uid,
-        userName: user.displayName || user.email?.split("@")[0] || "Valued Client",
-        userPhoto: user.photoURL || "",
-        rating: Number(reviewRating),
-        title: reviewTitle.trim(),
-        comment: reviewComment.trim(),
-        service: reviewAppointment.service || "Salon Treatment",
-        appointmentId: reviewAppointment.id,
-        verifiedBooking: true,
-        recommend: Boolean(reviewRecommend),
-        tags: reviewTags,
-        helpfulCount: 0,
-        createdAt: serverTimestamp()
-      });
-
-      // Update shop rating if we can find the shop document
-      try {
-        const found = allShops.find(s => s.id === targetShopId || s.slug === targetShopId);
-        if (found) {
-          const currentCount = found.ratingCount || 0;
-          const currentAvg = found.rating || 5;
-          const newCount = currentCount + 1;
-          const newAvg = Number(((currentAvg * currentCount + reviewRating) / newCount).toFixed(1));
-          await updateDoc(doc(db, "shops", found.id), {
-            rating: newAvg,
-            ratingCount: newCount
-          });
-        }
-      } catch (shopErr) {
-        console.log("Shop aggregate update skipped/deferred:", shopErr);
-      }
-
-      toast.success("Thank you! Your verified appointment review has been published.");
-      setReviewAppointment(null);
-      setReviewComment("");
-      setReviewTitle("");
-      setReviewTags([]);
-      setReviewRating(5);
-    } catch (err) {
-      console.error("Failed to post appointment review:", err);
-      toast.error("Failed to submit review.");
-      handleFirestoreError(err, OperationType.CREATE, "reviews");
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
-
   const now = new Date();
   const upcomingAppointments = useMemo(() => {
     const filtered = appointments.filter(app => {
@@ -567,6 +489,10 @@ export default function Dashboard() {
     });
     return getSortedData(filtered);
   }, [appointments, sortConfig]);
+
+  const unreviewedPastAppointments = useMemo(() => {
+    return pastAppointments.filter(app => !userReviews[app.id]);
+  }, [pastAppointments, userReviews]);
 
   // Metrics Calculations
   const stats = {
@@ -802,6 +728,42 @@ export default function Dashboard() {
                   </Button>
                 </div>
               </div>
+            )}
+
+            {/* Pending Feedback / Post-Appointment Review Incentive Banner */}
+            {unreviewedPastAppointments.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8 p-5 rounded-2xl bg-gradient-to-r from-amber-950/30 via-card to-card border border-primary/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0">
+                    <Star className="h-5 w-5 fill-primary text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-white text-sm">
+                        Rate Your Recent Visit ({unreviewedPastAppointments[0].service})
+                      </span>
+                      <Badge className="bg-primary text-black text-[9px] font-bold uppercase tracking-wider">
+                        +50 Points
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Share your rating and comments about your ritual to unlock VIP loyalty rewards.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setReviewAppointment(unreviewedPastAppointments[0])}
+                  className="bg-primary text-black hover:bg-primary/90 font-bold uppercase text-xs tracking-widest px-5 h-10 shrink-0 gap-2 shadow-md shadow-primary/20"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Submit Rating
+                </Button>
+              </motion.div>
             )}
 
             <div className="mb-8 flex items-center justify-between">
@@ -1156,13 +1118,7 @@ export default function Dashboard() {
                                       <Button 
                                         size="sm" 
                                         variant="outline"
-                                        onClick={() => {
-                                          setReviewAppointment(appointment);
-                                          setReviewRating(5);
-                                          setReviewTitle(`Exceptional experience with ${appointment.service || "salon"}`);
-                                          setReviewComment("");
-                                          setReviewTags(["Master Barber", "Punctual & Prompt"]);
-                                        }}
+                                        onClick={() => setReviewAppointment(appointment)}
                                         className="h-7 px-2.5 text-[10px] uppercase tracking-wider font-bold border-primary/40 text-primary hover:bg-primary hover:text-black gap-1.5 transition-all shadow-sm"
                                       >
                                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -1638,182 +1594,21 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Appointment Review Dialog */}
-        <Dialog open={!!reviewAppointment} onOpenChange={(open) => !open && setReviewAppointment(null)}>
-          <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[560px] p-0 overflow-hidden max-h-[90vh] flex flex-col">
-            <DialogHeader className="p-6 pb-4 border-b border-zinc-900">
-              <div className="flex items-center gap-2 text-primary text-xs uppercase tracking-widest font-bold mb-1">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                Share Your Experience
-              </div>
-              <DialogTitle className="text-2xl font-bold uppercase tracking-tight italic">
-                Review Your Visit
-              </DialogTitle>
-              {reviewAppointment && (
-                <DialogDescription className="text-xs text-zinc-400 mt-1">
-                  {reviewAppointment.service || "Appointment"} at{" "}
-                  <span className="text-white font-medium">
-                    {getShopInfo(reviewAppointment.shopId).name}
-                  </span>
-                  {reviewAppointment.date && ` on ${format(new Date(reviewAppointment.date), "MMMM d, yyyy")}`}
-                </DialogDescription>
-              )}
-            </DialogHeader>
-
-            <form onSubmit={handleSubmitAppointmentReview} className="overflow-y-auto p-6 space-y-5 flex-1">
-              
-              {/* Verified Booking Seal */}
-              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
-                <div className="text-xs">
-                  <span className="font-bold text-white">Verified Appointment: </span>
-                  <span className="text-emerald-300">
-                    Your completed booking verifies this review, unlocking the gold client badge.
-                  </span>
-                </div>
-              </div>
-
-              {/* Star Rating Selector */}
-              <div className="space-y-2 text-center p-4 rounded-xl bg-zinc-900/60 border border-zinc-800">
-                <Label className="text-xs uppercase tracking-widest text-zinc-400 font-bold block">
-                  How was your overall experience?
-                </Label>
-                
-                <div className="flex items-center justify-center gap-2 py-1">
-                  {[1, 2, 3, 4, 5].map((starNum) => {
-                    const activeRating = reviewHoverRating || reviewRating;
-                    const isFilled = starNum <= activeRating;
-
-                    return (
-                      <button
-                        key={starNum}
-                        type="button"
-                        onMouseEnter={() => setReviewHoverRating(starNum)}
-                        onMouseLeave={() => setReviewHoverRating(0)}
-                        onClick={() => setReviewRating(starNum)}
-                        className="p-1 transition-transform hover:scale-125 focus:outline-none"
-                      >
-                        <Star
-                          className={cn(
-                            "h-7 w-7 transition-colors",
-                            isFilled
-                              ? "text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]"
-                              : "text-zinc-700 hover:text-yellow-500/50"
-                          )}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <p className="text-xs font-semibold text-primary h-4">
-                  {reviewHoverRating === 1 || reviewRating === 1 ? "Disappointing" :
-                   reviewHoverRating === 2 || reviewRating === 2 ? "Fair" :
-                   reviewHoverRating === 3 || reviewRating === 3 ? "Good" :
-                   reviewHoverRating === 4 || reviewRating === 4 ? "Very Good" : "Exceptional Experience"}
-                </p>
-              </div>
-
-              {/* Headline */}
-              <div className="space-y-2">
-                <Label htmlFor="app-review-title" className="text-xs uppercase tracking-widest text-zinc-400 font-bold">
-                  Review Headline
-                </Label>
-                <Input
-                  id="app-review-title"
-                  placeholder="e.g. Masterful beard trim and calming scalp champi"
-                  value={reviewTitle}
-                  onChange={(e) => setReviewTitle(e.target.value)}
-                  required
-                  className="bg-zinc-900 border-zinc-800 text-sm h-11 text-white"
-                />
-              </div>
-
-              {/* Comments */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="app-review-comment" className="text-xs uppercase tracking-widest text-zinc-400 font-bold">
-                    Feedback Details
-                  </Label>
-                  <span className="text-[10px] text-zinc-500 font-mono">
-                    {reviewComment.length} / 500
-                  </span>
-                </div>
-                <Textarea
-                  id="app-review-comment"
-                  placeholder="Share details on the precision, stylist attentiveness, shop hygiene, and punctuality..."
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  rows={4}
-                  required
-                  maxLength={500}
-                  className="bg-zinc-900 border-zinc-800 text-sm text-white resize-none"
-                />
-              </div>
-
-              {/* Tag Highlights */}
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-zinc-400 font-bold block">
-                  Highlight Tags
-                </Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Master Barber", "Clean & Hygienic", "Punctual & Prompt", "Relaxing Vibe", "Great Consultation", "Luxury Amenities"].map((tag) => {
-                    const isSelected = reviewTags.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => handleToggleReviewTag(tag)}
-                        className={cn(
-                          "text-[11px] px-3 py-1 rounded-full transition-all border",
-                          isSelected
-                            ? "bg-primary text-black border-primary font-bold shadow-sm"
-                            : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white"
-                        )}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Recommendation Switch */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800/80">
-                <div className="space-y-0.5">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-white">
-                    Recommend this shop?
-                  </Label>
-                  <p className="text-[11px] text-zinc-400">
-                    Would you recommend this salon to friends?
-                  </p>
-                </div>
-                <Switch
-                  checked={reviewRecommend}
-                  onCheckedChange={setReviewRecommend}
-                />
-              </div>
-
-              <DialogFooter className="pt-4 border-t border-zinc-900 flex sm:justify-between items-center gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setReviewAppointment(null)}
-                  className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmittingReview || !reviewTitle.trim() || !reviewComment.trim()}
-                  className="bg-primary text-black hover:bg-primary/90 font-bold uppercase tracking-widest text-xs h-11 px-8 rounded-none shadow-lg shadow-primary/20"
-                >
-                  {isSubmittingReview ? "Submitting..." : "Post Review"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {/* Appointment Review Dialog Modal */}
+        <AppointmentReviewModal
+          isOpen={!!reviewAppointment}
+          onClose={() => setReviewAppointment(null)}
+          appointment={reviewAppointment}
+          shopName={reviewAppointment ? getShopInfo(reviewAppointment.shopId).name : undefined}
+          onReviewSubmitted={(reviewId, rating) => {
+            if (reviewAppointment) {
+              setUserReviews(prev => ({
+                ...prev,
+                [reviewAppointment.id]: { id: reviewId, rating, appointmentId: reviewAppointment.id }
+              }));
+            }
+          }}
+        />
 
         {/* Deposit Verification & Payment Dialog */}
         <Dialog open={!!payingDepositAppointment} onOpenChange={(open) => !open && setPayingDepositAppointment(null)}>

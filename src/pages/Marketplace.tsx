@@ -169,25 +169,19 @@ export default function Marketplace() {
     // 1. Search Filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const filtered = result.filter(shop => 
+      result = result.filter(shop => 
         shop.name.toLowerCase().includes(q) || 
         shop.description.toLowerCase().includes(q) ||
         (shop.location && shop.location.toLowerCase().includes(q)) ||
         shop.content?.services?.some(s => s.name.toLowerCase().includes(q))
       );
-      if (filtered.length > 0) {
-        result = filtered;
-      }
     }
 
     // 2. Service Filter
     if (selectedService) {
-      const filtered = result.filter(shop => 
+      result = result.filter(shop => 
         shop.content?.services?.some(s => s.name.toLowerCase().includes(selectedService.toLowerCase()))
       );
-      if (filtered.length > 0) {
-        result = filtered;
-      }
     }
 
     // 3. Proximity Calculation & Sort
@@ -274,22 +268,21 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-24 px-6">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-background py-16 px-4 sm:px-8 lg:px-12 w-full">
+      <div className="mx-auto w-full max-w-[1800px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-16 text-center"
         >
           <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.5em] text-primary">
-            Independent Creators
+            Partner Salons & Stylists
           </span>
           <h1 className="text-5xl font-light tracking-tight md:text-7xl mb-6">
-            DISCOVER <span className="italic text-primary">UNIQUE</span> SHOPS
+            FIND SALONS <span className="italic text-primary">NEAR YOU</span>
           </h1>
           <p className="max-w-2xl mx-auto text-muted-foreground leading-relaxed">
-            Support local barbers and stylists by visiting their independent landing pages. 
-            Each shop is unique, offering a personal touch to your grooming journey.
+            Find top barbers, salons, and hair stylists across Mumbai. Check services, prices, ratings, and book your appointment online.
           </p>
 
           <div className="mt-12 max-w-4xl mx-auto space-y-6">
@@ -436,57 +429,107 @@ export default function Marketplace() {
         </motion.div>
 
         {/* Shop Cards Display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence mode="popLayout">
-            {filteredAndSortedShops.map((shop, i) => (
-              <motion.div
-                key={shop.id || shop.slug}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ 
-                  duration: 0.35, 
-                  delay: i * 0.05,
-                  layout: { type: "spring", stiffness: 300, damping: 30 }
-                }}
-              >
-              <Card className="bg-card border-border hover:border-primary/50 transition-all group h-full flex flex-col relative overflow-hidden shadow-lg hover:shadow-primary/5">
-                {/* Cover Image / Banner */}
-                <div className="h-40 w-full relative overflow-hidden bg-zinc-900">
-                  <img 
-                    src={shop.coverImage || shop.logo || "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800"} 
-                    alt={shop.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                  
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    {shop.isVerified && (
-                      <Badge variant="outline" className="border-emerald-500/40 bg-emerald-950/80 text-emerald-400 uppercase text-[8px] tracking-[0.2em] px-2 h-5 backdrop-blur-sm">
-                        <ShieldCheck className="h-2.5 w-2.5 mr-1" /> VERIFIED
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="border-primary/40 bg-black/80 text-primary uppercase text-[8px] tracking-[0.2em] px-2 h-5 backdrop-blur-sm">
-                      MOCK WEBSITE
-                    </Badge>
-                  </div>
+        {filteredAndSortedShops.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-12 text-center rounded-3xl bg-card border border-border max-w-xl mx-auto space-y-6 shadow-xl"
+          >
+            <div className="h-16 w-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <Search className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-light tracking-tight text-foreground">No Salons or Stylists Found</h3>
+              <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto">
+                No ateliers matched <strong className="text-primary">"{searchQuery || selectedService}"</strong>. Try browsing by broader keywords or re-accessing one of your recent searches below:
+              </p>
+            </div>
 
-                  {shop.location && (
-                    <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] text-zinc-300 bg-black/70 px-2 py-0.5 rounded backdrop-blur-sm">
-                      <MapPin className="h-3 w-3 text-primary shrink-0" />
-                      <span className="truncate max-w-[200px]">{shop.location}</span>
-                    </div>
+            {recentSearches.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                {recentSearches.map((term) => (
+                  <Button
+                    key={term}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => applyRecentSearch(term)}
+                    className="border-border bg-background hover:border-primary/50 text-xs gap-1.5 rounded-full"
+                  >
+                    <History className="h-3 w-3 text-primary" />
+                    {term}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedService(null);
+                }}
+                className="rounded-full text-xs uppercase tracking-widest border-border"
+              >
+                Reset All Filters
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <AnimatePresence mode="popLayout">
+              {filteredAndSortedShops.map((shop, i) => (
+                <motion.div
+                  key={shop.id || shop.slug}
+                  layout
+                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  viewport={{ once: true }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: i * 0.06,
+                    ease: [0.16, 1, 0.3, 1],
+                    layout: { type: "spring", stiffness: 300, damping: 30 }
+                  }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                >
+                  <Card className="bg-white/[0.03] backdrop-blur-xl border border-white/10 hover:border-primary/50 transition-all duration-500 group h-full flex flex-col relative overflow-hidden shadow-xl hover:shadow-[0_20px_40px_rgba(212,175,55,0.12)] rounded-3xl">
+                    {/* Cover Image / Banner */}
+                    <div className="h-40 w-full relative overflow-hidden bg-zinc-900">
+                      <img 
+                        src={shop.coverImage || shop.logo || "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800"} 
+                        alt={shop.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                      
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        {shop.isVerified && (
+                          <Badge variant="outline" className="border-emerald-500/40 bg-emerald-950/80 text-emerald-400 uppercase text-[8px] tracking-[0.2em] px-2 h-5 backdrop-blur-sm">
+                            <ShieldCheck className="h-2.5 w-2.5 mr-1" /> VERIFIED
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="border-primary/40 bg-black/80 text-primary uppercase text-[8px] tracking-[0.2em] px-2 h-5 backdrop-blur-sm">
+                          PARTNER STUDIO
+                        </Badge>
+                      </div>
+
+                      {shop.location && (
+                        <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] text-zinc-300 bg-black/70 px-2 py-0.5 rounded backdrop-blur-sm">
+                          <MapPin className="h-3 w-3 text-primary shrink-0" />
+                          <span className="truncate max-w-[200px]">{shop.location}</span>
+                        </div>
                   )}
                 </div>
 
                 <CardHeader className="pt-4">
                   <div className="flex justify-between items-start gap-3">
-                    <div className="h-12 w-12 rounded-xl border border-zinc-700 bg-background flex items-center justify-center overflow-hidden shrink-0 shadow-md -mt-8 relative z-10">
+                    <div className="h-12 w-12 rounded-xl border border-white/20 bg-background/80 backdrop-blur-md flex items-center justify-center overflow-hidden shrink-0 shadow-lg -mt-8 relative z-10 transition-all duration-500 group-hover:scale-105 group-hover:border-white/50 group-hover:drop-shadow-[0_8px_16px_rgba(255,255,255,0.15)]">
                       {shop.logo ? (
-                        <img src={shop.logo} alt={shop.name} className="h-full w-full object-cover" />
+                        <img src={shop.logo} alt={shop.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
-                        <Scissors className="h-6 w-6 text-primary" />
+                        <Scissors className="h-6 w-6 text-primary transition-transform duration-500 group-hover:scale-105" />
                       )}
                     </div>
                     
@@ -556,8 +599,9 @@ export default function Marketplace() {
           ))}
           </AnimatePresence>
         </div>
-      </div>
+      )}
     </div>
+  </div>
   );
 }
 

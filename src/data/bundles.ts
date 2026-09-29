@@ -3,121 +3,121 @@ import { BundleServiceItem, CuratedBundle } from "@/types/bundle";
 export const CATALOG_SERVICES_FOR_BUNDLING: BundleServiceItem[] = [
   {
     id: "indian-bridal-makeup",
-    name: "Indian Bridal HD Makeup & Setting",
+    name: "Bridal HD Makeup & Setting",
     category: "bridal",
     price: 15000,
     durationMinutes: 150,
-    description: "High-definition bridal makeup with contouring, waterproof setting, eye drama, and jewelry pin placement.",
-    tag: "Signature Bridal"
+    description: "HD waterproof bridal makeup, eye makeup, lashes, and jewelry pin setting.",
+    tag: "Bridal Special"
   },
   {
     id: "glow-revival-facial",
-    name: "24K Gold Glow Revival Facial",
+    name: "24K Gold Instant Glow Facial",
     category: "skin",
     price: 2500,
     durationMinutes: 60,
-    description: "Deep ultrasonic pore cleansing, gold-leaf peptide infusion, and brightening cryo-globe massage.",
-    tag: "Radiance Best-Seller"
+    description: "Deep pore cleaning, 24K gold facial massage, and brightening serum mask.",
+    tag: "Best-Seller"
   },
   {
     id: "designer-mehndi",
-    name: "Designer Bridal Mehndi Artistry",
+    name: "Designer Bridal Mehendi",
     category: "bridal",
     price: 5000,
     durationMinutes: 180,
-    description: "Intricate traditional Rajasthani and Marwari henna motifs for hands and feet with clove-oil setting.",
-    tag: "Artisanal Henna"
+    description: "Beautiful Rajasthani and Marwari mehendi designs for hands and feet with natural henna.",
+    tag: "Bridal Mehendi"
   },
   {
     id: "ayurvedic-champi",
-    name: "Traditional Ayurvedic Head Massage (Champi)",
+    name: "Traditional Ayurvedic Champi",
     category: "wellness",
     price: 800,
     durationMinutes: 45,
-    description: "Warm botanical oil scalp massage targeting marma points for deep tension release and hair vitality.",
-    tag: "Ancient Ritual"
+    description: "Relaxing warm oil head massage to relieve tension and strengthen hair roots.",
+    tag: "Relaxing Massage"
   },
   {
     id: "luxury-sari-draping",
-    name: "Couture Sari & Dupatta Draping",
+    name: "Saree & Dupatta Draping",
     category: "bridal",
     price: 1200,
     durationMinutes: 35,
-    description: "Crease-free precision draping in traditional bridal pleated, Nivi, or Bengali style with hidden pin security.",
-    tag: "Couture Styling"
+    description: "Neat, pin-secured draping in traditional Nivi, Gujarati, Bengali, or party styles.",
+    tag: "Saree Draping"
   },
   {
     id: "luxury-keratin",
-    name: "Luxury Keratin Silk Smoothing",
+    name: "Keratin Hair Smoothing Treatment",
     category: "hair",
     price: 8000,
     durationMinutes: 120,
-    description: "Formaldehyde-free protein bonding treatment that seals cuticles, eliminates humidity frizz, and imparts mirror shine.",
-    tag: "Frizz-Free Shine"
+    description: "Frizz-control keratin treatment for smooth, manageable hair with mirror shine.",
+    tag: "Frizz-Free"
   },
   {
     id: "bespoke-balayage",
-    name: "Bespoke Balayage & Glaze Melt",
+    name: "Balayage Hair Highlights & Gloss",
     category: "hair",
     price: 5500,
     durationMinutes: 120,
-    description: "Hand-painted sun-kissed contouring with customized ammonia-free toning gloss and bond protection.",
-    tag: "Custom Color"
+    description: "Hand-painted dimensional highlights and gloss customized for Indian hair tones.",
+    tag: "Custom Highlights"
   },
   {
     id: "signature-haircut",
-    name: "Signature Precision Cut & Blowout",
+    name: "Expert Haircut & Blowdry",
     category: "hair",
     price: 1500,
     durationMinutes: 50,
-    description: "Face-framing shear work followed by a voluminous thermal blowout with argan gloss finish.",
+    description: "Precision haircut, hair wash, scalp massage, and voluminous blowdry.",
     tag: "Salon Classic"
   },
   {
     id: "executive-grooming",
-    name: "Executive Gentleman's Cut & Fade",
+    name: "Men's Haircut & Beard Trim",
     category: "grooming",
     price: 1000,
     durationMinutes: 40,
-    description: "Tailored fade, razor neck line-up, eyebrow clean, and matte texturizing finish.",
-    tag: "Men's Classic"
+    description: "Precision haircut, fade, neck razor line, and beard shaping.",
+    tag: "Men's Grooming"
   },
   {
     id: "beard-sculpting-hot-towel",
-    name: "Beard Sculpting & Hot Towel Treatment",
+    name: "Beard Shaping & Hot Towel Massage",
     category: "grooming",
     price: 800,
     durationMinutes: 30,
-    description: "Straight-razor beard outlining, sandalwood steam wrap, and organic jojoba beard butter conditioning.",
-    tag: "Luxe Barbering"
+    description: "Straight-razor beard outlining, warm steam towel, and beard oil massage.",
+    tag: "Beard Care"
   },
   {
     id: "charcoal-detox-facial",
-    name: "Charcoal & Vitamin C Detox Facial",
+    name: "Charcoal & Vitamin C Clean-up Facial",
     category: "skin",
     price: 2200,
     durationMinutes: 50,
-    description: "Activated bamboo charcoal blackhead vacuum, enzymatic exfoliation, and chilled antioxidant sheet mask.",
-    tag: "Pollution Defense"
+    description: "Deep pore charcoal cleaning, blackhead removal, and Vitamin C mask.",
+    tag: "Deep Cleaning"
   },
   {
     id: "luxury-mani-pedi",
-    name: "Spa Rose & Saffron Manicure & Pedicure",
+    name: "Rose & Saffron Manicure & Pedicure",
     category: "wellness",
     price: 2400,
     durationMinutes: 65,
-    description: "Rose petal soak, brown sugar scrub, cuticle nourish, nail shaping, and paraffin wax moisture lock.",
-    tag: "Pampering"
+    description: "Rose petal soak, scrub, nail shaping, cuticle care, and moisturizing mask.",
+    tag: "Hand & Foot Care"
   }
 ];
 
 export const CURATED_BUNDLES: CuratedBundle[] = [
   {
     id: "bridal-glow-package",
-    title: "The Royal Bridal Glow Package",
-    subtitle: "The ultimate head-to-toe wedding radiance ritual for the discerning bride",
+    title: "The Complete Royal Bridal Package",
+    subtitle: "Full wedding package with bridal makeup, mehendi, gold facial, and saree draping",
     tag: "Most Popular Bridal Package",
-    badge: "22% Bundle Savings",
+    badge: "22% Combo Savings",
     category: "bridal",
     categoryLabel: "Bridal & Weddings",
     description: "A meticulously orchestrated, full-day bridal transformation designed to give you luminous, camera-ready skin, majestic hair, and immaculate ceremonial makeup.",

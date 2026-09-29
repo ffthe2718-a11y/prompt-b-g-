@@ -369,10 +369,16 @@ export default function AdminMembers() {
       try {
         const response = await fetch("/api/admin/trigger-reminders", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            appointments: reminderResult.appointments.length > 0 
+              ? reminderResult.appointments 
+              : appointments.filter(a => a.status === 'confirmed')
+          }),
         });
         const data = await response.json();
         if (data.success) {
-          toast.success(`Dispatched 24h reminders! Alerted ${reminderResult.triggeredCount} client appointment(s) in the 24-hour window.`);
+          toast.success(`Dispatched 24h reminders! Alerted client appointment(s) in the 24-hour window.`);
         }
       } catch (srvErr) {
         toast.success(`Dispatched ${reminderResult.triggeredCount} 24-hour proactive appointment alerts!`);

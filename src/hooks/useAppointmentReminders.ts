@@ -35,6 +35,9 @@ export function useAppointmentReminders(
   const appointmentsRef = useRef(appointments);
   appointmentsRef.current = appointments;
 
+  const reminderOptionsRef = useRef(reminderOptions);
+  reminderOptionsRef.current = reminderOptions;
+
   // Update upcoming list whenever appointments update
   useEffect(() => {
     const upcoming = getUpcoming24HourAppointments(appointments);
@@ -52,7 +55,7 @@ export function useAppointmentReminders(
   const triggerCheck = useCallback(async (customOptions?: ReminderOptions): Promise<ReminderResult> => {
     setIsChecking(true);
     try {
-      const mergedOptions = { ...reminderOptions, ...customOptions };
+      const mergedOptions = { ...reminderOptionsRef.current, ...customOptions };
       const res = await checkAndTrigger24hReminders(appointmentsRef.current, mergedOptions);
       setLastCheckTime(new Date());
 
@@ -66,7 +69,7 @@ export function useAppointmentReminders(
     } finally {
       setIsChecking(false);
     }
-  }, [reminderOptions]);
+  }, []);
 
   // Periodic automatic check in background
   useEffect(() => {

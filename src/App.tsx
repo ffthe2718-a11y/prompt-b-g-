@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
@@ -113,6 +113,14 @@ function AnimatedRoutes() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/become-partner" 
+            element={
+              <ProtectedRoute>
+                <PartnerWithUs />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/shop/:slug" element={<ShopLanding />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/referrals" element={<ReferralDashboard />} />
@@ -125,6 +133,8 @@ function AnimatedRoutes() {
               </ProtectedRoute>
             } 
           />
+          {/* Catch-all 404 route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

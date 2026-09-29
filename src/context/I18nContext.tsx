@@ -10,12 +10,12 @@ interface Translations {
 
 const translations: Translations = {
   "hero.title": {
-    en: "Elegance Redefined.",
-    hi: "सुरुचिपूर्णता की नई परिभाषा।"
+    en: "Top Salon & Hair Services.",
+    hi: "बेस्ट सैलून और हेयर सर्विसेज।"
   },
   "hero.subtitle": {
-    en: "Luxury Indian Hair Experience",
-    hi: "शानदार भारतीय हेयर अनुभव"
+    en: "Best Hair, Beard & Beauty Salons in Mumbai",
+    hi: "मुंबई में बेहतरीन हेयर, बियर्ड और ब्यूटी सैलून"
   },
   "nav.home": {
     en: "Home",
@@ -26,20 +26,20 @@ const translations: Translations = {
     hi: "सेवाएं"
   },
   "nav.gallery": {
-    en: "Gallery",
-    hi: "गैलरी"
+    en: "Photos & Styles",
+    hi: "फोटो और स्टाइल्स"
   },
   "nav.book": {
-    en: "Book Now",
-    hi: "अभी बुक करें"
+    en: "Book Appointment",
+    hi: "अपॉइंटमेंट बुक करें"
   },
   "partner.title": {
-    en: "Partner With Us",
-    hi: "हमारे साथ जुड़ें"
+    en: "Register Your Salon",
+    hi: "अपना सैलून जोड़ें"
   },
   "admin.dashboard": {
-    en: "Master Dashboard",
-    hi: "मास्टर डैशबोर्ड"
+    en: "Admin Dashboard",
+    hi: "एडमिन डैशबोर्ड"
   }
 };
 

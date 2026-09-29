@@ -121,14 +121,124 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
+  html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+  }
+}
+
+/* Premium Micro-Interactions & Hover Animations */
+@layer utilities {
+  /* Logo hover animation */
+  .logo-hover {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .logo-hover:hover {
+    transform: scale(1.05);
+  }
+
+  /* Major cards hover animation */
+  .card-hover-effect {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card-hover-effect:hover {
+    transform: scale(1.03) translateY(-4px);
+    box-shadow: 0 18px 45px rgba(0,0,0,0.35), 0 10px 25px rgba(212,175,55,0.12);
+  }
+
+  /* Service & Package card lift */
+  .card-lift {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card-lift:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Button hover animation */
+  .btn-hover-effect {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+  }
+  .btn-hover-effect:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.3);
+  }
+  .btn-hover-effect:active {
+    transform: translateY(0px) scale(0.98);
+  }
+
+  /* Image zoom on hover container */
+  .img-zoom-container {
+    overflow: hidden;
+  }
+  .img-zoom-container img {
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .img-zoom-container:hover img {
+    transform: scale(1.08);
+  }
+
+  /* Navigation underline animation */
+  .nav-underline-anim {
+    position: relative;
+  }
+  .nav-underline-anim::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background-color: var(--primary);
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 2px;
+  }
+  .nav-underline-anim:hover::after,
+  .nav-underline-anim.active::after {
+    width: 100%;
+  }
+
+  /* Subtle floating effect */
+  .floating-element {
+    animation: floatingEffect 5s ease-in-out infinite;
+  }
+
+  /* Success checkmark animation */
+  .success-check-anim {
+    animation: successPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes floatingEffect {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes successPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }

@@ -20,10 +20,10 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { name: "Home", path: "/" },
   { name: "Services", path: "/services" },
-  { name: "Bundles", path: "/bundles" },
-  { name: "Gallery", path: "/gallery" },
-  { name: "Discover", path: "/marketplace" },
-  { name: "About", path: "/about" },
+  { name: "Special Packages", path: "/bundles" },
+  { name: "Photos & Styles", path: "/gallery" },
+  { name: "Find Salons", path: "/marketplace" },
+  { name: "About Us", path: "/about" },
 ];
 
 export default function Navbar() {
@@ -72,9 +72,9 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center gap-2 group">
-          <span className="text-2xl font-bold font-serif tracking-[0.1em] uppercase text-primary">Aurelia Luxe</span>
+      <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 sm:px-8 lg:px-12 py-4">
+        <Link to="/" className="flex items-center gap-2 group logo-hover">
+          <span className="text-2xl font-bold font-serif tracking-[0.1em] uppercase text-primary">Aurelia Salon</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -83,8 +83,8 @@ export default function Navbar() {
             <Link
               key={link.path}
               to={link.path}
-              className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium ${
-                location.pathname === link.path ? "text-primary" : "text-muted-foreground"
+              className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium nav-underline-anim ${
+                location.pathname === link.path ? "text-primary active" : "text-muted-foreground"
               }`}
             >
               {link.name === "Home" ? t("nav.home") : 
@@ -94,8 +94,8 @@ export default function Navbar() {
           ))}
           <Link
             to="/partner"
-            className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium ${
-              location.pathname === "/partner" ? "text-primary" : "text-muted-foreground"
+            className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium nav-underline-anim ${
+              location.pathname === "/partner" ? "text-primary active" : "text-muted-foreground"
             }`}
           >
             {t("partner.title")}
