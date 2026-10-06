@@ -300,22 +300,22 @@ export default function BundledServices() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 pb-28">
       {/* Hero Header Section */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card/80 via-background to-background pt-20 pb-16 px-6">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card/80 via-background to-background pt-8 sm:pt-16 lg:pt-20 pb-8 sm:pb-16 px-3 sm:px-6">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
         
-        <div className="mx-auto w-full max-w-[1800px] relative z-10 text-center px-4 sm:px-8 lg:px-12">
+        <div className="mx-auto w-full max-w-[1800px] relative z-10 text-center px-2 sm:px-8 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase mb-6 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-semibold tracking-widest text-primary uppercase mb-4 sm:mb-6 shadow-sm">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Special Packages & Combo Offers</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight mb-6">
+            <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-light tracking-tight mb-4 sm:mb-6">
               SPECIAL <span className="italic font-serif text-primary">PACKAGES</span> & COMBOS
             </h1>
 
@@ -543,7 +543,7 @@ export default function BundledServices() {
             </div>
 
             {/* Grid of Other Curated Bundles */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="flex overflow-x-auto snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-4 -mx-2 px-2 md:mx-0 md:px-0 custom-scrollbar">
               {filteredCuratedBundles.map((bundle, idx) => (
                 <motion.div
                   key={bundle.id}
@@ -552,7 +552,7 @@ export default function BundledServices() {
                   viewport={{ once: true, margin: "-30px" }}
                   transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
                   whileHover={{ y: -6, scale: 1.015 }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden flex flex-col justify-between group hover:border-primary/50 transition-all duration-500 hover:shadow-[0_20px_45px_rgba(212,175,55,0.08)]"
+                  className="w-[85%] md:w-auto shrink-0 snap-start rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden flex flex-col justify-between group hover:border-primary/50 transition-all duration-500 hover:shadow-[0_20px_45px_rgba(212,175,55,0.08)]"
                 >
                   <div>
                     {/* Image Header */}
@@ -891,7 +891,7 @@ export default function BundledServices() {
 
       {/* ITINERARY & DETAILS MODAL */}
       <Dialog open={!!inspectingBundle} onOpenChange={(open) => !open && setInspectingBundle(null)}>
-        <DialogContent className="max-w-2xl bg-zinc-950 border border-primary/30 text-white p-6 max-h-[88vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-24px)] max-w-2xl max-h-[88dvh] overflow-y-auto rounded-2xl bg-zinc-950 border border-primary/30 text-white p-4 sm:p-6">
           {inspectingBundle && (
             <div>
               <DialogHeader className="mb-4">
@@ -979,7 +979,7 @@ export default function BundledServices() {
 
       {/* DIRECT BOOKING MODAL */}
       <Dialog open={!!bookingTarget} onOpenChange={(open) => !open && setBookingTarget(null)}>
-        <DialogContent className="max-w-xl bg-zinc-950 border border-primary/30 text-white p-6 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100%-24px)] max-w-xl max-h-[90dvh] overflow-y-auto rounded-2xl bg-zinc-950 border border-primary/30 text-white p-4 sm:p-6">
           {bookingTarget && !confirmedBooking && (
             <div>
               <DialogHeader className="mb-4">

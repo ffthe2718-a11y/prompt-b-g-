@@ -94,7 +94,7 @@ export default function AuthModal({ trigger, defaultTab = "login" }: AuthModalPr
       <DialogTrigger asChild>
         {trigger || <Button variant="outline">Sign In</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px] bg-background border-border p-0 overflow-hidden">
+      <DialogContent className="w-[calc(100%-24px)] max-w-[400px] max-h-[90dvh] overflow-y-auto bg-background border-border p-0 rounded-2xl shadow-2xl">
         <div className="relative h-32 bg-primary/10 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 opacity-20 grayscale pointer-events-none">
              <img 

@@ -124,19 +124,19 @@ export default function Gallery() {
   };
 
   return (
-    <div className="bg-background py-16 px-4 sm:px-8 lg:px-12 min-h-screen w-full">
+    <div className="bg-background py-6 sm:py-12 lg:py-16 px-3 sm:px-8 lg:px-12 min-h-screen w-full">
       <div className="mx-auto w-full max-w-[1800px]">
         {/* Header Title Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-14 text-center"
+          className="mb-8 sm:mb-14 text-center"
         >
-          <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.5em] text-primary">
+          <span className="mb-2 sm:mb-3 block text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em] sm:tracking-[0.5em] text-primary">
             Real Client Hairstyles & Makeovers
           </span>
-          <h1 className="text-5xl font-light tracking-tight md:text-7xl">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight">
             PHOTOS & <span className="italic font-serif text-primary">HAIRSTYLES</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -165,7 +165,7 @@ export default function Gallery() {
         {/* Lookbook Staggered Masonry Grid */}
         <motion.div 
           layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          className="flex overflow-x-auto snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 custom-scrollbar"
         >
           <AnimatePresence mode="popLayout">
             {filteredLooks.map((item, index) => {
@@ -180,7 +180,7 @@ export default function Gallery() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
                   whileHover={{ y: -6, scale: 1.02 }}
-                  className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl group cursor-pointer shadow-xl hover:shadow-[0_20px_40px_rgba(212,175,55,0.12)] hover:border-primary/50 transition-all duration-500"
+                  className="w-[82%] sm:w-auto shrink-0 snap-start relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl group cursor-pointer shadow-xl hover:shadow-[0_20px_40px_rgba(212,175,55,0.12)] hover:border-primary/50 transition-all duration-500"
                   onClick={() => setSelectedLook(item)}
                 >
                   <div className="relative aspect-[3/4] overflow-hidden">
@@ -235,7 +235,7 @@ export default function Gallery() {
 
         {/* Inspection Modal */}
         <Dialog open={!!selectedLook} onOpenChange={(open) => !open && setSelectedLook(null)}>
-          <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[700px] p-0 overflow-hidden">
+          <DialogContent className="w-[calc(100%-24px)] max-w-[700px] max-h-[90dvh] overflow-y-auto bg-zinc-950 border-zinc-800 text-white rounded-2xl md:rounded-3xl p-0 shadow-2xl">
             {selectedLook && (
               <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="relative aspect-[3/4] md:aspect-auto">

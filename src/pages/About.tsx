@@ -7,20 +7,20 @@ import MeetYourStylist from "@/components/MeetYourStylist";
 
 export default function About() {
   return (
-    <div className="bg-background py-16 px-4 sm:px-8 lg:px-12 min-h-screen w-full">
+    <div className="bg-background py-6 sm:py-12 lg:py-16 px-3 sm:px-8 lg:px-12 min-h-screen w-full">
       <div className="mx-auto w-full max-w-[1800px]">
         {/* Story Section */}
-        <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 items-center">
+        <div className="grid grid-cols-1 gap-8 sm:gap-16 lg:grid-cols-2 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.5em] text-primary">
+            <span className="mb-2 sm:mb-4 block text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em] sm:tracking-[0.5em] text-primary">
               Our Story & Promise
             </span>
-            <h1 className="mb-8 text-5xl font-light tracking-tight md:text-7xl">
+            <h1 className="mb-4 sm:mb-8 text-3xl sm:text-5xl md:text-7xl font-light tracking-tight">
               BEST SALON <br />
               <span className="italic font-serif text-primary">EXPERIENCE</span>
             </h1>

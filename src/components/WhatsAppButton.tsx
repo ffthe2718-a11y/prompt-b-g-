@@ -16,24 +16,23 @@ export default function WhatsAppButton({
   size = "lg",
   text = "Book via WhatsApp"
 }: WhatsAppButtonProps) {
-  const handleClick = () => {
-    const encodedMessage = encodeURIComponent(WHATSAPP_MESSAGE_TEMPLATE);
-    const whatsappUrl = `https://wa.me/${SALON_WHATSAPP.replace(/\+/g, '')}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
-  };
+  const encodedMessage = encodeURIComponent(WHATSAPP_MESSAGE_TEMPLATE);
+  const whatsappUrl = `https://wa.me/${SALON_WHATSAPP.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
 
   return (
     <Button
-      onClick={handleClick}
+      asChild
       variant={variant}
       size={size}
       className={cn(
-        "flex items-center gap-2 rounded bg-[#25D366] text-white hover:bg-[#128C7E] transition-colors font-bold uppercase tracking-widest text-xs py-6 px-8",
+        "flex items-center gap-2 rounded bg-[#25D366] text-white hover:bg-[#128C7E] transition-colors font-bold uppercase tracking-widest text-xs py-6 px-8 cursor-pointer shadow-lg",
         className
       )}
     >
-      <MessageCircle className="h-5 w-5" />
-      {text}
+      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+        <MessageCircle className="h-5 w-5" />
+        <span>{text}</span>
+      </a>
     </Button>
   );
 }

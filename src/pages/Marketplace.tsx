@@ -268,17 +268,17 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-16 px-4 sm:px-8 lg:px-12 w-full">
+    <div className="min-h-screen bg-background py-6 sm:py-12 lg:py-16 px-3 sm:px-8 lg:px-12 w-full">
       <div className="mx-auto w-full max-w-[1800px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-16 text-center"
+          className="mb-8 sm:mb-16 text-center"
         >
-          <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.5em] text-primary">
+          <span className="mb-2 sm:mb-4 block text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em] sm:tracking-[0.5em] text-primary">
             Partner Salons & Stylists
           </span>
-          <h1 className="text-5xl font-light tracking-tight md:text-7xl mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight mb-4 sm:mb-6">
             FIND SALONS <span className="italic text-primary">NEAR YOU</span>
           </h1>
           <p className="max-w-2xl mx-auto text-muted-foreground leading-relaxed">
@@ -476,7 +476,7 @@ export default function Marketplace() {
             </div>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="flex overflow-x-auto snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-4 -mx-2 px-2 md:mx-0 md:px-0 custom-scrollbar">
             <AnimatePresence mode="popLayout">
               {filteredAndSortedShops.map((shop, i) => (
                 <motion.div
@@ -486,6 +486,7 @@ export default function Marketplace() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   viewport={{ once: true }}
+                  className="w-[85%] md:w-auto shrink-0 snap-start"
                   transition={{ 
                     duration: 0.5, 
                     delay: i * 0.06,

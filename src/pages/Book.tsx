@@ -612,18 +612,18 @@ export default function Book() {
   };
 
   return (
-    <div className="bg-background py-16 px-4 sm:px-8 lg:px-12 w-full">
+    <div className="bg-background py-6 sm:py-12 lg:py-16 px-3 sm:px-8 lg:px-12 w-full">
       <div className="mx-auto w-full max-w-[1800px]">
-        <div className="grid grid-cols-1 gap-24 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 sm:gap-12 lg:gap-24 lg:grid-cols-2">
           {/* Left Side: Info */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.5em] text-primary">
+            <span className="mb-2 sm:mb-4 block text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em] sm:tracking-[0.5em] text-primary">
               Reservations
             </span>
-            <h1 className="mb-8 text-5xl font-light tracking-tight md:text-7xl">
+            <h1 className="mb-4 sm:mb-8 text-3xl sm:text-5xl md:text-7xl font-light tracking-tight">
               BOOK <br />
               <span className="italic text-primary">APPOINTMENT</span>
             </h1>
@@ -2020,7 +2020,7 @@ export default function Book() {
 
       {/* Service Details Modal */}
       <Dialog open={!!viewingService} onOpenChange={(open) => !open && setViewingService(null)}>
-        <DialogContent className="bg-card border-border max-w-sm">
+        <DialogContent className="w-[calc(100%-24px)] max-w-sm max-h-[90dvh] overflow-y-auto bg-card border-border rounded-2xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-serif text-primary">
               {viewingService?.name}
@@ -2051,7 +2051,7 @@ export default function Book() {
 
       {/* Mandatory 25% Advance Payment Checkout Verification Modal */}
       <Dialog open={showAdvanceModal} onOpenChange={setShowAdvanceModal}>
-        <DialogContent className="bg-card border-border max-w-lg p-6 sm:p-8">
+        <DialogContent className="w-[calc(100%-24px)] max-w-lg max-h-[90dvh] overflow-y-auto bg-card border-border rounded-2xl p-4 sm:p-8">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
               <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
@@ -2207,7 +2207,7 @@ export default function Book() {
 
       {/* Booking Confirmation Receipt Dialog */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="bg-card border-border max-w-lg p-6 sm:p-8">
+        <DialogContent className="w-[calc(100%-24px)] max-w-lg max-h-[90dvh] overflow-y-auto bg-card border-border rounded-2xl p-4 sm:p-8">
           <DialogHeader>
             <motion.div 
               initial={{ scale: 0, rotate: -20 }}

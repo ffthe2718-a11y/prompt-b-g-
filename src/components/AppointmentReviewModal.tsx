@@ -234,7 +234,7 @@ export default function AppointmentReviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[580px] p-0 overflow-hidden max-h-[92vh] flex flex-col shadow-2xl">
+      <DialogContent className="w-[calc(100%-24px)] max-w-[580px] max-h-[90dvh] overflow-y-auto bg-zinc-950 border-zinc-800 text-white rounded-2xl md:rounded-3xl p-0 shadow-2xl">
         <DialogHeader className="p-6 pb-4 border-b border-zinc-900 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-primary text-xs uppercase tracking-widest font-bold">

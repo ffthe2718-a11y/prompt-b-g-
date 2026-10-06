@@ -76,7 +76,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-border bg-gradient-to-b from-background via-card/50 to-zinc-950 pt-16 pb-12 px-4 sm:px-8 lg:px-12 relative overflow-hidden w-full">
+    <footer className="hidden md:block border-t border-border bg-gradient-to-b from-background via-card/50 to-zinc-950 pt-16 pb-12 px-4 sm:px-8 lg:px-12 relative overflow-hidden w-full">
       {/* Background Decorative Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 

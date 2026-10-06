@@ -328,11 +328,11 @@ export default function ShopLanding({ previewData }: { previewData?: ShopData })
             );
           case 'about':
             return (
-              <section key="about" className="py-24 px-4 bg-zinc-950">
-                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+              <section key="about" className="py-8 sm:py-16 md:py-24 px-4 bg-zinc-950">
+                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 md:gap-16 items-center">
                   <div>
-                    <h2 className="text-4xl font-bold uppercase tracking-widest mb-8 border-l-4 border-primary pl-6">Our Story</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                    <h2 className="text-2xl sm:text-4xl font-bold uppercase tracking-widest mb-4 sm:mb-8 border-l-4 border-primary pl-4 sm:pl-6">Our Story</h2>
+                    <p className="text-sm sm:text-lg text-muted-foreground leading-relaxed mb-6 sm:mb-8">
                       {shop.content.aboutText || "Welcome to our shop. We provide the best grooming services in town with a focus on quality and customer satisfaction."}
                     </p>
                     <div className="flex gap-6">
@@ -354,17 +354,17 @@ export default function ShopLanding({ previewData }: { previewData?: ShopData })
             );
           case 'services':
             return (
-              <section key="services" className="py-24 px-4 bg-black">
+              <section key="services" className="py-8 sm:py-16 md:py-24 px-4 bg-black">
                 <div className="max-w-4xl mx-auto">
-                  <h2 className="text-4xl font-bold uppercase tracking-widest mb-16 text-center">Premium Services</h2>
-                  <div className="space-y-8">
+                  <h2 className="text-2xl sm:text-4xl font-bold uppercase tracking-widest mb-6 sm:mb-16 text-center">Premium Services</h2>
+                  <div className="flex overflow-x-auto snap-x snap-mandatory sm:block sm:space-y-8 gap-4 pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 custom-scrollbar">
                     {(shop.content.services || [
-                      { name: "Signature Haircut", price: "$35", description: "Precision cut tailored to your head shape." },
-                      { name: "Beard Sculpting", price: "$25", description: "Expert beard shaping and line-up." },
-                      { name: "Luxury Hot Towel Shave", price: "$40", description: "Traditional straight-razor shave experience." },
-                      { name: "Head Massage", price: "$15", description: "Relaxing 10-minute scalp massage." }
+                      { name: "Signature Haircut", price: "₹1,500", description: "Precision cut tailored to your head shape." },
+                      { name: "Beard Sculpting", price: "₹950", description: "Expert beard shaping and line-up." },
+                      { name: "Luxury Hot Towel Shave", price: "₹1,200", description: "Traditional straight-razor shave experience." },
+                      { name: "Head Massage", price: "₹800", description: "Relaxing 10-minute scalp massage." }
                     ]).map((service, idx) => (
-                      <div key={idx} className="flex flex-col border-b border-zinc-800 pb-4 group hover:border-primary transition-colors">
+                      <div key={idx} className="w-[82%] sm:w-auto shrink-0 snap-start p-4 sm:p-0 rounded-2xl sm:rounded-none bg-zinc-950 sm:bg-transparent border border-zinc-800 sm:border-0 sm:border-b sm:border-zinc-800 pb-4 group hover:border-primary transition-colors flex flex-col justify-between">
                         <div className="flex justify-between items-end">
                           <div>
                             <h3 className="text-xl font-bold uppercase group-hover:text-primary transition-colors">{service.name}</h3>

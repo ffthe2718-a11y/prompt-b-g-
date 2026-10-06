@@ -766,7 +766,7 @@ export default function ShopReviews({
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="flex overflow-x-auto snap-x snap-mandatory sm:block sm:space-y-6 gap-4 pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 custom-scrollbar">
             <AnimatePresence mode="popLayout">
               {filteredReviews.map((rev, index) => {
                 const isAuthor = user?.uid === rev.userId;
@@ -782,7 +782,7 @@ export default function ShopReviews({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3, delay: index * 0.04 }}
-                    className="p-6 md:p-7 rounded-2xl border border-zinc-800/80 bg-zinc-950/70 hover:border-zinc-700/80 transition-all shadow-md group relative overflow-hidden"
+                    className="w-[85%] sm:w-auto shrink-0 snap-start p-6 md:p-7 rounded-2xl border border-zinc-800/80 bg-zinc-950/70 hover:border-zinc-700/80 transition-all shadow-md group relative overflow-hidden"
                   >
                     {/* Top Row: User Avatar, Name, Rating & Badges */}
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">

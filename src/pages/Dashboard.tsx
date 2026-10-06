@@ -1453,7 +1453,7 @@ export default function Dashboard() {
 
         {/* Edit Dialog */}
         <Dialog open={!!isEditing} onOpenChange={(open) => !open && setIsEditing(null)}>
-          <DialogContent className="bg-card border-border text-foreground sm:max-w-[500px]">
+          <DialogContent className="w-[calc(100%-24px)] bg-card border-border text-foreground sm:max-w-[500px] max-h-[90dvh] overflow-y-auto rounded-2xl">
             <DialogHeader>
               <DialogTitle className="text-xl font-light tracking-tight">Edit Appointment</DialogTitle>
             </DialogHeader>
@@ -1560,7 +1560,7 @@ export default function Dashboard() {
 
         {/* Confirmation Dialog */}
         <Dialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
-          <DialogContent className="bg-card border-border text-foreground sm:max-w-[400px]">
+          <DialogContent className="w-[calc(100%-24px)] bg-card border-border text-foreground sm:max-w-[400px] max-h-[90dvh] overflow-y-auto rounded-2xl">
             <DialogHeader>
               <DialogTitle className="text-xl font-light tracking-tight">
                 {confirmAction?.type === 'cancel' ? 'Cancel Appointment' : 'Delete Appointment'}
@@ -1612,7 +1612,7 @@ export default function Dashboard() {
 
         {/* Deposit Verification & Payment Dialog */}
         <Dialog open={!!payingDepositAppointment} onOpenChange={(open) => !open && setPayingDepositAppointment(null)}>
-          <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[540px] p-0 overflow-hidden max-h-[92vh] flex flex-col">
+          <DialogContent className="w-[calc(100%-24px)] bg-zinc-950 border-zinc-800 text-white sm:max-w-[540px] p-0 overflow-hidden max-h-[90dvh] rounded-2xl flex flex-col">
             <DialogHeader className="p-6 pb-4 border-b border-zinc-900 bg-amber-500/5">
               <div className="flex items-center gap-2 text-amber-400 text-xs uppercase tracking-widest font-bold mb-1">
                 <ShieldAlert className="h-4 w-4" />

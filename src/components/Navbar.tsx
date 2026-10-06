@@ -71,10 +71,14 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 sm:px-8 lg:px-12 py-4">
-        <Link to="/" className="flex items-center gap-2 group logo-hover">
-          <span className="text-2xl font-bold font-serif tracking-[0.1em] uppercase text-primary">Aurelia Salon</span>
+    <nav className="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-xl pt-safe">
+      <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-3 sm:px-6 lg:px-12 py-2.5 md:py-4">
+        {/* Brand Logo */}
+        <Link to="/" className="flex items-center gap-1.5 group shrink-0">
+          <Scissors className="h-4 w-4 sm:h-5 sm:w-5 text-primary rotate-45 shrink-0" />
+          <span className="text-base sm:text-2xl font-bold font-serif tracking-wider uppercase text-primary truncate max-w-[160px] sm:max-w-none">
+            Aurelia Salon
+          </span>
         </Link>
 
         {/* Desktop Nav */}
@@ -178,21 +182,17 @@ export default function Navbar() {
                               {n.title}
                             </span>
                             {!n.read && (
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <button 
                                 onClick={() => markAsRead(n.id)}
-                                className="h-4 w-4 text-muted-foreground hover:text-primary"
+                                className="text-[10px] text-muted-foreground hover:text-primary"
                               >
-                                <Check className="h-3 w-3" />
-                              </Button>
+                                Mark read
+                              </button>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {n.message}
-                          </p>
-                          <span className="text-[9px] text-muted-foreground/50">
-                            {n.createdAt?.toDate ? format(n.createdAt.toDate(), "MMM d, h:mm a") : "Just now"}
+                          <p className="text-xs text-muted-foreground leading-relaxed">{n.message}</p>
+                          <span className="text-[9px] text-muted-foreground/60 font-mono mt-1">
+                            {n.createdAt ? format(n.createdAt.toDate ? n.createdAt.toDate() : new Date(n.createdAt), "MMM d, h:mm a") : 'Just now'}
                           </span>
                         </div>
                       ))
@@ -203,55 +203,22 @@ export default function Navbar() {
 
               <Link
                 to="/admin"
-                className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-2 ${
+                className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-1.5 ${
                   location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 <Shield className="h-4 w-4" /> Admin
               </Link>
-              <Link
-                to="/admin/analytics"
-                className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-2 ${
-                  location.pathname === "/admin/analytics" ? "text-primary font-bold" : "text-muted-foreground"
-                }`}
-              >
-                <BarChart3 className="h-4 w-4 text-primary" /> Analytics
-              </Link>
-              <Link
-                to="/admin/home-services"
-                className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-2 ${
-                  location.pathname === "/admin/home-services" ? "text-primary font-bold" : "text-amber-400/90"
-                }`}
-              >
-                <Scissors className="h-4 w-4" /> Home Services
-              </Link>
-              {isAdmin && (
-                <Link
-                  to="/admin/shops"
-                  className={`text-xs uppercase tracking-widest transition-colors hover:text-primary font-medium flex items-center gap-2 ${
-                    location.pathname === "/admin/shops" ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  <Globe className="h-4 w-4" /> Master Dash
-                </Link>
-              )}
             </div>
           )}
-          
-          <div className="flex items-center gap-4 border-l border-border pl-8">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setLanguage(language === "en" ? "hi" : "en")}
-              className="text-[10px] uppercase tracking-widest text-primary hover:bg-primary/10"
-            >
-              {language === "en" ? "हिन्दी" : "EN"}
-            </Button>
+
+          {/* User Auth or Sign In */}
+          <div className="flex items-center gap-4">
             {loading ? (
               <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-end mr-2">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end mr-1">
                   <span className="text-[9px] font-bold uppercase tracking-widest text-primary leading-tight">
                     {profile?.role || 'User'}
                   </span>
@@ -280,7 +247,7 @@ export default function Navbar() {
               <AuthModal />
             )}
             
-            <Button asChild className="rounded-full bg-primary px-8 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 gap-2">
+            <Button asChild className="rounded-full bg-primary px-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 gap-2">
               <Link to="/book">
                 <Calendar className="h-3.5 w-3.5" />
                 Book Appointment
@@ -289,122 +256,118 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Nav */}
-        <div className="md:hidden">
+        {/* Mobile Header Right Controls */}
+        <div className="flex items-center gap-2 md:hidden">
+          {user ? (
+            <Link to="/dashboard" className="flex items-center gap-1.5 p-1">
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="User" className="h-7 w-7 rounded-full border border-primary/30" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="h-7 w-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary text-[10px] font-bold uppercase">
+                  {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+                </div>
+              )}
+            </Link>
+          ) : (
+            <AuthModal trigger={
+              <Button variant="outline" size="sm" className="h-8 px-2.5 rounded-full text-[10px] uppercase font-bold border-primary/40 text-primary">
+                Sign In
+              </Button>
+            } />
+          )}
+
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-foreground">
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-foreground hover:bg-white/10">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-background border-border text-foreground">
-              <div className="flex flex-col gap-8 mt-12">
+            <SheetContent side="right" className="bg-zinc-950 border-border text-foreground w-[280px] p-6">
+              <div className="flex flex-col gap-6 mt-6">
+                <div className="border-b border-border/60 pb-4">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-primary block">
+                    Aurelia Salon Menu
+                  </span>
+                </div>
+
                 {navLinks.map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
                     onClick={() => setIsOpen(false)}
-                    className={`text-lg uppercase tracking-[0.2em] ${
-                      location.pathname === link.path ? "text-primary" : "text-muted-foreground"
-                    }`}
+                    className={cn(
+                      "text-sm uppercase tracking-wider font-semibold py-1",
+                      location.pathname === link.path ? "text-primary" : "text-muted-foreground hover:text-white"
+                    )}
                   >
                     {link.name}
                   </Link>
                 ))}
+
                 <Link
                   to="/referrals"
                   onClick={() => setIsOpen(false)}
-                  className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                    location.pathname === "/referrals" ? "text-primary" : "text-emerald-400"
-                  }`}
+                  className="text-sm uppercase tracking-wider font-semibold text-emerald-400 flex items-center gap-2 py-1"
                 >
-                  <Gift className="h-5 w-5" /> Refer & Earn
+                  <Gift className="h-4 w-4" /> Refer & Earn (₹500)
                 </Link>
+
                 {user && (
                   <Link
                     to="/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                      location.pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
-                    }`}
+                    className="text-sm uppercase tracking-wider font-semibold text-muted-foreground hover:text-white flex items-center gap-2 py-1"
                   >
-                    <User className="h-5 w-5" /> Dashboard
+                    <User className="h-4 w-4" /> My Dashboard
                   </Link>
                 )}
-                {(isOwner || isAdmin) && (
-                  <Link
-                    to="/dashboard/shop-editor"
-                    onClick={() => setIsOpen(false)}
-                    className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                      location.pathname === "/dashboard/shop-editor" ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    <Globe className="h-5 w-5" /> Shop Editor
-                  </Link>
-                )}
+
                 {(isAdmin || isOwner) && (
                   <>
-                    <Link
-                      to="/admin"
-                      onClick={() => setIsOpen(false)}
-                      className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                        location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    >
-                      <Shield className="h-5 w-5" /> Admin
-                    </Link>
-                    <Link
-                      to="/admin/analytics"
-                      onClick={() => setIsOpen(false)}
-                      className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                        location.pathname === "/admin/analytics" ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    >
-                      <BarChart3 className="h-5 w-5 text-primary" /> Analytics & Trends
-                    </Link>
-                    <Link
-                      to="/admin/home-services"
-                      onClick={() => setIsOpen(false)}
-                      className={`text-lg uppercase tracking-[0.2em] flex items-center gap-2 ${
-                        location.pathname === "/admin/home-services" ? "text-amber-400" : "text-muted-foreground"
-                      }`}
-                    >
-                      <Scissors className="h-5 w-5 text-amber-400" /> Home Services
-                    </Link>
+                    <div className="border-t border-border/60 pt-3">
+                      <span className="text-[9px] uppercase font-bold tracking-widest text-amber-400 block mb-2">
+                        Admin Controls
+                      </span>
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="text-xs uppercase tracking-wider font-semibold text-muted-foreground hover:text-white flex items-center gap-2 py-1"
+                      >
+                        <Shield className="h-4 w-4" /> Admin Console
+                      </Link>
+                      <Link
+                        to="/admin/analytics"
+                        onClick={() => setIsOpen(false)}
+                        className="text-xs uppercase tracking-wider font-semibold text-muted-foreground hover:text-white flex items-center gap-2 py-1"
+                      >
+                        <BarChart3 className="h-4 w-4 text-primary" /> Analytics
+                      </Link>
+                    </div>
                   </>
                 )}
-                
-                <div className="h-px bg-border my-2" />
-                
-                {user ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      logout();
-                      setIsOpen(false);
-                    }}
-                    className="border-border text-foreground tracking-widest uppercase text-xs py-8"
-                  >
-                    Logout
+
+                <div className="pt-4 border-t border-border/60 space-y-3">
+                  {user ? (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        logout();
+                        setIsOpen(false);
+                      }}
+                      className="w-full border-border text-foreground tracking-widest uppercase text-xs h-10"
+                    >
+                      Logout
+                    </Button>
+                  ) : null}
+
+                  <Button asChild className="w-full rounded-full bg-primary h-11 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 shadow-lg shadow-primary/20 gap-2">
+                    <Link to="/book" onClick={() => setIsOpen(false)}>
+                      <Calendar className="h-3.5 w-3.5" />
+                      Book Appointment
+                    </Link>
                   </Button>
-                ) : (
-                  <AuthModal 
-                    trigger={
-                      <Button 
-                        className="bg-primary text-black tracking-widest uppercase text-xs py-8"
-                      >
-                        Sign In
-                      </Button>
-                    }
-                  />
-                )}
-                
-                <Button asChild className="rounded-full bg-primary py-8 text-sm font-bold uppercase tracking-widest text-black hover:bg-primary/90 shadow-lg shadow-primary/20 gap-2">
-                  <Link to="/book" onClick={() => setIsOpen(false)}>
-                    <Calendar className="h-4 w-4" />
-                    Book Appointment
-                  </Link>
-                </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>

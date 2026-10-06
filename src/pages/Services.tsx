@@ -6,7 +6,7 @@ import ServicesSection from "@/components/ServicesSection";
 
 export default function Services() {
   return (
-    <div className="bg-background py-16 px-4 sm:px-8 lg:px-12 min-h-screen w-full">
+    <div className="bg-background py-6 sm:py-12 lg:py-16 px-3 sm:px-8 lg:px-12 min-h-screen w-full">
       <div className="mx-auto w-full max-w-[1800px]">
         {/* Main Services Section with Category Imagery */}
         <ServicesSection showTitle={true} />
@@ -16,7 +16,7 @@ export default function Services() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-24 rounded-3xl border border-primary/30 bg-gradient-to-br from-card via-background to-primary/5 p-8 sm:p-14 text-center relative overflow-hidden shadow-2xl"
+          className="mt-10 sm:mt-24 rounded-3xl border border-primary/30 bg-gradient-to-br from-card via-background to-primary/5 p-5 sm:p-14 text-center relative overflow-hidden shadow-2xl"
         >
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
           

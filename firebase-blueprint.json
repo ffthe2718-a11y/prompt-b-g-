@@ -136,6 +136,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["referralCode", "createdAt"]
+    },
+    "LoyaltyTransaction": {
+      "title": "Loyalty Transaction",
+      "description": "Stores user loyalty point credits and redemptions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "points": { "type": "number" },
+        "type": { "type": "string", "enum": ["earned", "redeemed"] },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "points", "type"]
     }
   },
   "firestore": {
@@ -166,7 +179,10 @@
     "/referrals/{referralId}": {
       "schema": "Referral",
       "description": "Referral invitations and rewarded booking records"
+    },
+    "/loyaltyTransactions/{transactionId}": {
+      "schema": "LoyaltyTransaction",
+      "description": "Loyalty point credits and redemptions"
     }
   }
 }
-

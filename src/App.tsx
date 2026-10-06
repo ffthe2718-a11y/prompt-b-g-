@@ -141,23 +141,30 @@ function AnimatedRoutes() {
   );
 }
 
+import ScrollToTopButton from "@/components/ScrollToTopButton";
+import MobileBottomDock from "@/components/MobileBottomDock";
+import FloatingWhatsAppButton from "@/components/FloatingWhatsAppButton";
+
 export default function App() {
   return (
     <AuthProvider>
       <I18nProvider>
         <TooltipProvider>
           <Router>
-          <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
-            <Navbar />
-            <main>
-              <AnimatedRoutes />
-            </main>
-            <Footer />
-            <Toaster position="top-center" />
-          </div>
-        </Router>
-      </TooltipProvider>
-    </I18nProvider>
-  </AuthProvider>
+            <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 pb-16 md:pb-0">
+              <Navbar />
+              <main>
+                <AnimatedRoutes />
+              </main>
+              <Footer />
+              <MobileBottomDock />
+              <FloatingWhatsAppButton />
+              <ScrollToTopButton />
+              <Toaster position="top-center" />
+            </div>
+          </Router>
+        </TooltipProvider>
+      </I18nProvider>
+    </AuthProvider>
   );
 }

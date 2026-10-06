@@ -364,9 +364,9 @@ export default function ReferralDashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
       {/* Hero Header */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card via-background to-background py-16 md:py-24">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-card via-background to-background py-8 sm:py-16 md:py-24">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(212,175,55,0.08),transparent_70%)] pointer-events-none" />
-        <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-8 lg:px-12 relative z-10">
+        <div className="mx-auto w-full max-w-[1800px] px-3 sm:px-8 lg:px-12 relative z-10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-primary mb-4">

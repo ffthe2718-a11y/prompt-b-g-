@@ -143,11 +143,11 @@ export default function PartnerWithUs() {
   const ActiveIcon = STEPS[currentStep].icon;
 
   return (
-    <div className="min-h-screen bg-black text-white pt-16 pb-12 px-4 sm:px-8 lg:px-12 w-full">
+    <div className="min-h-screen bg-black text-white pt-6 sm:pt-16 pb-12 px-3 sm:px-8 lg:px-12 w-full">
       <div className="w-full max-w-[1400px] mx-auto">
-        <div className="text-center mb-12">
-          <Badge className="mb-4 bg-primary text-black uppercase tracking-widest text-[10px] py-1 px-3">Partner With Us</Badge>
-          <h1 className="text-5xl font-light tracking-tighter sm:text-6xl mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <Badge className="mb-3 sm:mb-4 bg-primary text-black uppercase tracking-widest text-[10px] py-1 px-3">Partner With Us</Badge>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tighter mb-4">
             GROW YOUR <span className="italic text-primary">BUSINESS</span>
           </h1>
           <p className="text-muted-foreground text-lg font-light italic">Join Aurelia Luxe's network of premium salons and barbers.</p>

@@ -193,7 +193,7 @@ export default function JoinWaitlistModal({
         </DialogTrigger>
       )}
 
-      <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-24px)] max-w-lg max-h-[90dvh] overflow-y-auto bg-zinc-950 border-zinc-800 text-white p-4 sm:p-8 rounded-2xl">
         {!isSuccess ? (
           <>
             <DialogHeader className="space-y-2">

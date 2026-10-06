@@ -145,7 +145,7 @@ export default function MeetYourStylist({
         </div>
 
         {/* Stylists Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-10">
+        <div className="flex overflow-x-auto snap-x snap-mandatory md:grid md:grid-cols-2 gap-6 md:gap-8 lg:gap-10 pb-4 -mx-2 px-2 md:mx-0 md:px-0 custom-scrollbar">
           <AnimatePresence mode="popLayout">
             {filteredStylists.map((stylist, index) => (
               <motion.div
@@ -155,7 +155,7 @@ export default function MeetYourStylist({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="group relative bg-zinc-900/60 rounded-2xl border border-zinc-800/90 overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col shadow-xl hover:shadow-2xl hover:shadow-primary/5"
+                className="w-[85%] md:w-auto shrink-0 snap-start group relative bg-zinc-900/60 rounded-2xl border border-zinc-800/90 overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col shadow-xl hover:shadow-2xl hover:shadow-primary/5"
               >
                 {/* Top Stylist Info Banner */}
                 <div className="p-6 md:p-8 flex flex-col sm:flex-row gap-6">
