@@ -238,12 +238,20 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_gallery_salon ON gallery(salon_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_bookings_salon_date ON bookings(salon_id, date);
   CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+  CREATE INDEX IF NOT EXISTS idx_bookings_salon_day_status ON bookings(salon_id, date, status);
   CREATE INDEX IF NOT EXISTS idx_reviews_salon ON reviews(salon_id, status);
   CREATE INDEX IF NOT EXISTS idx_uploads_salon ON uploads(salon_id);
   CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
   CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit(created_at);
   CREATE INDEX IF NOT EXISTS idx_salon_reviews_salon ON salon_reviews(salon_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_email_verifications_user ON email_verifications(user_id);
+
+  -- Defence in depth: a team member can never hold two live appointments at
+  -- the same minute, even if application logic regresses. Unassigned requests
+  -- (staff_id NULL) are bounded by the capacity check in the booking route.
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_staff_slot
+    ON bookings(salon_id, date, time, staff_id)
+    WHERE staff_id IS NOT NULL AND status IN ('pending', 'confirmed');
 `);
 
 // Forward-compatible additions for deployments created before these fields existed.

@@ -1,9 +1,9 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock, Loader2, Phone, Scissors, Sparkles, User } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, CheckCircle2, Clock, Loader2, Phone, RefreshCw, Scissors, Sparkles, User } from "lucide-react";
 import type { Availability, Salon } from "@/types/salon";
 import { formatDuration, formatPrice } from "@/types/salon";
 import type { SiteTheme } from "@/components/site/theme";
-import { publicApi } from "@/lib/api";
+import { isApiError, publicApi } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ function todayString() {
   return localDate(new Date());
 }
 
-function previewAvailability(salon: Salon, date: string): Availability {
+function previewAvailability(salon: Salon, date: string, serviceId: string): Availability {
   const weekday = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long" });
   const hours = salon.hours.find((item) => item.day === weekday);
   if (!hours || hours.closed) {
@@ -29,8 +29,22 @@ function previewAvailability(salon: Salon, date: string): Availability {
   const start = openH * 60 + openM;
   const end = closeH * 60 + closeM;
   const interval = salon.bookingSettings.slotIntervalMinutes || 30;
+  const service = salon.services.find((item) => item.id === serviceId);
+  const duration = Math.max(5, Number(service?.durationMinutes) || interval);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+    return { date, closed: true, reason: "Opening hours are not set for this day.", slots: [] };
+  }
+  if (start + duration > end) {
+    return {
+      date,
+      closed: true,
+      reason: "This service needs more time than the salon is open on this day.",
+      slots: [],
+    };
+  }
   const slots: { time: string; available: boolean }[] = [];
-  for (let minute = start; minute < end; minute += interval) {
+  // Mirror the live grid: a slot only exists if the whole appointment fits.
+  for (let minute = start; minute + duration <= end; minute += interval) {
     const time = `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
     slots.push({ time, available: true });
   }
@@ -62,6 +76,13 @@ export default function BookingSection({
   const [notes, setNotes] = useState("");
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  // Availability can fail independently of the form (offline, 5xx, rate limit).
+  // Keep that separate from "the salon is closed" so the guest gets a retry
+  // instead of a misleading message.
+  const [slotsError, setSlotsError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
+  const salonRef = useRef(salon);
+  salonRef.current = salon;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{
@@ -86,22 +107,29 @@ export default function BookingSection({
     setTime("");
     if (!date) return;
     if (preview) {
-      setAvailability(previewAvailability(salon, date));
+      setSlotsError("");
+      setAvailability(previewAvailability(salonRef.current, date, serviceId));
       setLoadingSlots(false);
       return;
     }
     let cancelled = false;
     setLoadingSlots(true);
     setAvailability(null);
+    setSlotsError("");
     publicApi
       .availability(salon.slug, date, serviceId || undefined, staffId || undefined)
       .then((result) => {
-        if (!cancelled) setAvailability(result);
+        if (cancelled) return;
+        setAvailability(result);
+        // A slot can vanish between renders (another guest booked it). Drop a
+        // selection that is no longer offered instead of submitting a stale one.
+        setTime((current) =>
+          current && result.slots.some((slot) => slot.time === current && slot.available) ? current : ""
+        );
       })
       .catch((err) => {
-        if (!cancelled) {
-          setAvailability({ date, closed: true, reason: err?.message || "Could not load times.", slots: [] });
-        }
+        if (cancelled) return;
+        setSlotsError(err?.message || "Could not load available times.");
       })
       .finally(() => {
         if (!cancelled) setLoadingSlots(false);
@@ -109,7 +137,7 @@ export default function BookingSection({
     return () => {
       cancelled = true;
     };
-  }, [date, serviceId, staffId, salon.slug, preview, salon]);
+  }, [date, serviceId, staffId, salon.slug, preview, reloadToken]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -139,6 +167,14 @@ export default function BookingSection({
       return;
     }
 
+    const selectedSlot = availability?.slots.find((slot) => slot.time === time);
+    if (!selectedSlot || !selectedSlot.available) {
+      setError("That time is no longer available. Pick another slot.");
+      setTime("");
+      setReloadToken((token) => token + 1);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const result = await publicApi.createBooking(salon.slug, {
@@ -162,6 +198,12 @@ export default function BookingSection({
       toast.success(result.message);
     } catch (err: any) {
       setError(err?.message || "Could not send your booking request.");
+      // The slot was taken while the form was open: refresh the grid so the
+      // guest can immediately pick a valid time instead of guessing.
+      if (isApiError(err) && (err.code === "slot_unavailable" || err.code === "invalid_staff" || err.code === "invalid_service")) {
+        setTime("");
+        setReloadToken((token) => token + 1);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -378,6 +420,22 @@ export default function BookingSection({
                     <div className="flex items-center gap-2 py-4 text-[10px]" style={{ color: theme.muted }}>
                       <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking availability…
                     </div>
+                  ) : slotsError ? (
+                    <div
+                      className="rounded-xl border px-3 py-3 text-[10px] leading-relaxed"
+                      style={{ borderColor: "#ef444455", backgroundColor: "#ef444410", color: "#f87171" }}
+                    >
+                      <p className="font-medium">We could not load open times.</p>
+                      <p className="mt-1 opacity-90">{slotsError}</p>
+                      <button
+                        type="button"
+                        onClick={() => setReloadToken((token) => token + 1)}
+                        className="mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[9px] font-bold uppercase tracking-[0.16em]"
+                        style={{ borderColor: "#ef444455", color: "#f87171" }}
+                      >
+                        <RefreshCw className="h-3 w-3" /> Try again
+                      </button>
+                    </div>
                   ) : availability?.closed ? (
                     <p className="rounded-xl border px-3 py-3 text-[10px] leading-relaxed" style={{ borderColor: theme.border, color: theme.muted }}>
                       {availability.reason}
@@ -488,6 +546,7 @@ export default function BookingSection({
               <button
                 type="submit"
                 disabled={submitting || (!!availability?.closed) || !time}
+                aria-busy={submitting}
                 className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-transform hover:scale-[1.01] disabled:opacity-40"
                 style={{ backgroundColor: theme.accent, color: theme.accentText }}
               >

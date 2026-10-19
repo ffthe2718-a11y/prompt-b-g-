@@ -309,6 +309,7 @@ export default function Services({
                         <div className="mr-1 flex items-center gap-1.5">
                           <span className="text-[8px] uppercase tracking-[0.12em] text-muted-foreground">Bookable</span>
                           <Switch
+                            aria-label={`${service.name} bookable online`}
                             checked={service.isActive}
                             disabled={busy}
                             onCheckedChange={(checked) => void toggleActive(service, Boolean(checked))}

@@ -22,6 +22,14 @@ const HOST = process.env.HOST || "0.0.0.0";
 const isProduction = process.env.NODE_ENV === "production";
 const baseDomain = (process.env.PUBLIC_BASE_DOMAIN || "").toLowerCase().trim();
 
+function dateInTimezone(timezone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: timezone || "UTC" }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -30,10 +38,17 @@ function escapeHtml(value: unknown): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Mirrors the public API: a site is live only when published *and* approved. */
+function findPublicSalon(slug: string): any {
+  return db
+    .prepare(
+      "SELECT * FROM salons WHERE slug = ? COLLATE NOCASE AND status = 'published' AND approval_status = 'approved'"
+    )
+    .get(slug);
+}
+
 function injectSalonMeta(html: string, slug: string): string {
-  const row = db
-    .prepare("SELECT * FROM salons WHERE slug = ? COLLATE NOCASE AND status = 'published'")
-    .get(slug) as any;
+  const row = findPublicSalon(slug);
   if (!row) return html;
   const salon = publishedSalonBundle(row);
   const title = salon.seoTitle || `${salon.name}${salon.city ? ` — Salon in ${salon.city}` : ""}`;
@@ -169,7 +184,7 @@ async function startServer() {
     if (!["localhost", "127.0.0.1"].includes(host) && !host.endsWith(".e2b.app")) {
       const custom = db
         .prepare(
-          "SELECT slug FROM salons WHERE custom_domain = ? COLLATE NOCASE AND custom_domain_verified = 1 AND status = 'published'"
+          "SELECT slug FROM salons WHERE custom_domain = ? COLLATE NOCASE AND custom_domain_verified = 1 AND status = 'published' AND approval_status = 'approved'"
         )
         .get(host) as any;
       if (custom?.slug) {
@@ -184,7 +199,24 @@ async function startServer() {
   /* API                                                              */
   /* ---------------------------------------------------------------- */
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", database: "sqlite", time: new Date().toISOString() });
+    try {
+      const probe = db.prepare("SELECT 1 AS ok").get() as { ok: number };
+      const published = db
+        .prepare("SELECT COUNT(*) AS count FROM salons WHERE status = 'published' AND approval_status = 'approved'")
+        .get() as { count: number };
+      res.json({
+        status: probe?.ok === 1 ? "ok" : "degraded",
+        database: probe?.ok === 1 ? "sqlite" : "unreachable",
+        publishedSalons: published?.count ?? 0,
+        uptimeSeconds: Math.round(process.uptime()),
+        time: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      res
+        .status(503)
+        .setHeader("Cache-Control", "no-store")
+        .json({ status: "error", database: "unreachable", message: error?.message || "Database check failed." });
+    }
   });
   app.use("/api/auth", authRoutes);
   app.use("/api/salons", salonRoutes);
@@ -228,7 +260,9 @@ async function startServer() {
   app.get("/sitemap.xml", (req, res) => {
     const origin = siteOrigin() || `${req.protocol}://${req.get("host")}`;
     const rows = db
-      .prepare("SELECT slug, updated_at FROM salons WHERE status = 'published' ORDER BY published_at DESC")
+      .prepare(
+        "SELECT slug, updated_at FROM salons WHERE status = 'published' AND approval_status = 'approved' ORDER BY published_at DESC"
+      )
       .all() as { slug: string; updated_at: string }[];
     const urls = [
       { loc: `${origin}/`, lastmod: undefined as string | undefined },
@@ -280,20 +314,59 @@ ${urls
         },
       })
     );
+    /**
+     * Client-side routes. Everything else that is not a live salon is a real
+     * 404 — an unknown slug or subdomain must not answer 200, or search
+     * engines index empty tenant pages.
+     */
+    const appRoutes = [
+      /^\/$/,
+      /^\/pricing\/?$/,
+      /^\/marketplace\/?$/,
+      /^\/login\/?$/,
+      /^\/signup\/?$/,
+      /^\/auth(\/.*)?$/,
+      /^\/forgot-password\/?$/,
+      /^\/reset-password\/?$/,
+      /^\/verify-email\/?$/,
+      /^\/onboarding\/?$/,
+      /^\/dashboard(\/.*)?$/,
+      /^\/admin(\/.*)?$/,
+    ];
+    const isAppRoute = (requestPath: string) =>
+      appRoutes.some((pattern) => pattern.test(requestPath)) ||
+      (requestPath.startsWith("/s/") && requestPath.split("/").length === 3);
+
+    const sendShell = (res: Response, status: number, requestPath = "") => {
+      res.status(status);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache");
+      const isPrivate = requestPath === "/dashboard" || requestPath.startsWith("/dashboard/") ||
+        requestPath === "/admin" || requestPath.startsWith("/admin/");
+      if (status === 404 || isPrivate) res.setHeader("X-Robots-Tag", "noindex");
+      res.send(indexHtml);
+    };
+
     const serveSalon = (req: Request, res: Response) => {
+      const slug = String(req.params.slug);
+      if (!findPublicSalon(slug)) return sendShell(res, 404);
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "public, max-age=30");
-      res.send(injectSalonMeta(indexHtml, String(req.params.slug)));
+      res.send(injectSalonMeta(indexHtml, slug));
     };
+
     app.get("/s/:slug", serveSalon);
     app.get("/:slug", (req, res, next) => {
       if (req.path.includes(".")) return next();
+      if (isAppRoute(req.path)) return sendShell(res, 200, req.path);
       return serveSalon(req, res);
     });
-    app.get("*", (_req, res) => {
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("Cache-Control", "no-cache");
-      res.send(indexHtml);
+    app.get("*", (req, res) => {
+      // Missing static assets should stay 404s, never an HTML page.
+      if (/\.[a-z0-9]{2,6}$/i.test(req.path)) {
+        return res.status(404).type("text/plain").send("Not found");
+      }
+      return sendShell(res, isAppRoute(req.path) ? 200 : 404, req.path);
     });
   }
 
@@ -315,6 +388,13 @@ ${urls
     }
     if (error?.type === "entity.too.large") {
       return res.status(413).json({ error: { message: "Request is too large.", code: "payload_too_large" } });
+    }
+    // Last line of defence for the unique booking index: a slot that slipped
+    // past the application check is a conflict, not a server failure.
+    if (typeof error?.code === "string" && error.code.startsWith("SQLITE_CONSTRAINT")) {
+      return res.status(409).json({
+        error: { message: "That record conflicts with an existing one. Please refresh and try again.", code: "conflict" },
+      });
     }
     console.error("[api] Unhandled error:", error);
     res.status(500).json({
@@ -363,19 +443,26 @@ ${urls
   /* Daily reminder sweep for tomorrow's appointments. */
   cron.schedule("0 9 * * *", async () => {
     try {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      const date = tomorrow.toISOString().slice(0, 10);
+      const utcDate = new Date().toISOString().slice(0, 10);
+      const windowEnd = new Date(`${utcDate}T12:00:00Z`);
+      windowEnd.setUTCDate(windowEnd.getUTCDate() + 2);
       const rows = db
         .prepare(
           `SELECT b.*, s.name AS salon_name, s.email AS salon_email, s.phone AS salon_phone,
                   s.address AS salon_address, s.city AS salon_city, s.slug AS salon_slug,
                   s.currency AS salon_currency, s.timezone AS salon_timezone
            FROM bookings b JOIN salons s ON s.id = b.salon_id
-           WHERE b.date = ? AND b.status IN ('pending','confirmed') AND b.customer_email <> ''`
+           WHERE b.date BETWEEN ? AND ? AND b.status IN ('pending','confirmed') AND b.customer_email <> ''`
         )
-        .all(date) as any[];
+        .all(utcDate, windowEnd.toISOString().slice(0, 10)) as any[];
+      let sent = 0;
       for (const row of rows) {
+        // "Tomorrow" is a different calendar day per salon timezone; sending a
+        // day early or late would be wrong for owners outside the server zone.
+        const salonToday = dateInTimezone(row.salon_timezone || "UTC");
+        const tomorrow = new Date(`${salonToday}T12:00:00Z`);
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+        if (row.date !== tomorrow.toISOString().slice(0, 10)) continue;
         await sendReminderEmail({
           salon: {
             name: row.salon_name,
@@ -400,8 +487,9 @@ ${urls
             price: row.price_cents / 100,
           },
         });
+        sent++;
       }
-      if (rows.length) console.log(`[reminders] processed ${rows.length} appointment reminder(s) for ${date}.`);
+      if (sent) console.log(`[reminders] processed ${sent} appointment reminder(s).`);
     } catch (error: any) {
       console.warn("[reminders] failed:", error?.message || error);
     }

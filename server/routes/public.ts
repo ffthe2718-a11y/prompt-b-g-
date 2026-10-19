@@ -57,11 +57,12 @@ function minutesNowIn(timezone: string): number {
       timeZone: timezone || "UTC",
       hour: "2-digit",
       minute: "2-digit",
-      hour12: false,
+      hourCycle: "h23",
     }).formatToParts(new Date());
     const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
     const minute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
-    return hour * 60 + minute;
+    // Some engines report midnight as 24 under hour12:false; h23 avoids that.
+    return (hour % 24) * 60 + minute;
   } catch {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
@@ -80,6 +81,54 @@ function weekdayName(date: string): string {
   );
 }
 
+interface BookingInterval {
+  start: number;
+  end: number;
+  staffId: string | null;
+}
+
+/**
+ * Occupied windows for a day. Each booking reserves its service duration, not
+ * just its start minute, so a three-hour colour blocks the slots underneath it.
+ */
+function bookingIntervals(salonId: string, date: string, fallbackMinutes: number): BookingInterval[] {
+  const rows = db
+    .prepare(
+      `SELECT b.time, b.staff_id, COALESCE(s.duration_minutes, 0) AS duration_minutes
+         FROM bookings b
+         LEFT JOIN services s ON s.id = b.service_id
+        WHERE b.salon_id = ? AND b.date = ? AND b.status IN ('pending','confirmed')`
+    )
+    .all(salonId, date) as { time: string; staff_id: string | null; duration_minutes: number }[];
+
+  return rows
+    .map((row) => {
+      const start = timeToMinutes(row.time);
+      const duration = Number(row.duration_minutes) > 0 ? Number(row.duration_minutes) : fallbackMinutes;
+      return { start, end: start + Math.max(duration, 1), staffId: row.staff_id ?? null };
+    })
+    .filter((interval) => interval.start >= 0);
+}
+
+function overlaps(interval: BookingInterval, start: number, end: number): boolean {
+  return start < interval.end && interval.start < end;
+}
+
+/** True when the given team member already has an overlapping appointment. */
+function staffBusy(intervals: BookingInterval[], staffId: string, start: number, end: number): boolean {
+  return intervals.some((interval) => interval.staffId === staffId && overlaps(interval, start, end));
+}
+
+/** True when the salon itself is busy and has no team to parallelise with. */
+function salonBusy(intervals: BookingInterval[], start: number, end: number): boolean {
+  return intervals.some((interval) => overlaps(interval, start, end));
+}
+
+/**
+ * Single source of truth for the booking grid. Used by the availability API
+ * and re-checked inside the booking transaction so a stale UI can never
+ * double-book a slot.
+ */
 function computeAvailability(row: any, bundle: any, date: string, serviceId?: string, staffId?: string) {
   const settings = bundle.bookingSettings || {};
   if (settings.enabled === false) {
@@ -91,7 +140,12 @@ function computeAvailability(row: any, bundle: any, date: string, serviceId?: st
   const maxDate = addDays(today, settings.maxAdvanceDays ?? 60);
   if (date < today) return { date, closed: true, reason: "This date has already passed.", slots: [] };
   if (date > maxDate) {
-    return { date, closed: true, reason: `Bookings are open up to ${settings.maxAdvanceDays ?? 60} days ahead.`, slots: [] };
+    return {
+      date,
+      closed: true,
+      reason: `Bookings are open up to ${settings.maxAdvanceDays ?? 60} days ahead.`,
+      slots: [],
+    };
   }
 
   const day = weekdayName(date);
@@ -100,29 +154,54 @@ function computeAvailability(row: any, bundle: any, date: string, serviceId?: st
     return { date, closed: true, reason: `We are closed on ${day}.`, slots: [] };
   }
 
-  const interval = Number(settings.slotIntervalMinutes) || 30;
+  const interval = Math.max(5, Number(settings.slotIntervalMinutes) || 30);
   const openMinutes = timeToMinutes(hours.open);
   const closeMinutes = timeToMinutes(hours.close);
+  if (!Number.isFinite(openMinutes) || !Number.isFinite(closeMinutes) || closeMinutes <= openMinutes) {
+    return { date, closed: true, reason: "Opening hours are not configured for this day.", slots: [] };
+  }
+
   const service = serviceId ? (bundle.services || []).find((s: any) => s.id === serviceId) : null;
-  const duration = Number(service?.durationMinutes) || interval;
+  if (serviceId && !service) throw new ApiError(400, "That service is no longer available.", "invalid_service");
+
+  const staff = staffId ? (bundle.staff || []).find((s: any) => s.id === staffId) : null;
+  if (staffId && !staff) throw new ApiError(400, "That team member is no longer available.", "invalid_staff");
+
+  const duration = Math.max(5, Number(service?.durationMinutes) || interval);
+  if (openMinutes + duration > closeMinutes) {
+    return {
+      date,
+      closed: true,
+      reason: "This service needs more time than the salon is open on this day. Please contact the salon.",
+      slots: [],
+    };
+  }
+
   const activeStaff = (bundle.staff || []).filter((s: any) => s.isActive !== false);
-  const capacity = staffId ? 1 : Math.max(1, activeStaff.length);
   const minNotice = Math.max(0, Number(settings.minNoticeHours) || 0);
   const earliest = date === today ? minutesNowIn(bundle.timezone) + minNotice * 60 : -1;
-
-  const booked = db
-    .prepare(
-      "SELECT time, staff_id FROM bookings WHERE salon_id = ? AND date = ? AND status IN ('pending','confirmed')"
-    )
-    .all(row.id, date) as { time: string; staff_id: string | null }[];
+  const intervals = bookingIntervals(row.id, date, interval);
 
   const slots: { time: string; available: boolean }[] = [];
   for (let minute = openMinutes; minute + duration <= closeMinutes; minute += interval) {
     const time = minutesToTime(minute);
-    const count = staffId
-      ? booked.filter((b) => b.time === time && b.staff_id === staffId).length
-      : booked.filter((b) => b.time === time).length;
-    slots.push({ time, available: minute >= earliest && count < capacity });
+    let available = minute >= earliest;
+    if (available) {
+      const end = minute + duration;
+      const freeStaff = activeStaff.filter((member: any) => !staffBusy(intervals, member.id, minute, end));
+      // Requests booked without a preference still consume one member of the
+      // team, so they reduce capacity even though no specific person is busy.
+      const unassigned = intervals.filter(
+        (entry) => entry.staffId === null && overlaps(entry, minute, end)
+      ).length;
+      if (activeStaff.length > 0) {
+        const remaining = freeStaff.length - unassigned;
+        available = remaining >= 1 && (!staff || freeStaff.some((member: any) => member.id === staff.id));
+      } else {
+        available = !salonBusy(intervals, minute, end);
+      }
+    }
+    slots.push({ time, available });
   }
 
   return {
@@ -130,6 +209,8 @@ function computeAvailability(row: any, bundle: any, date: string, serviceId?: st
     closed: false,
     reason: "",
     hours: { open: hours.open, close: hours.close },
+    durationMinutes: duration,
+    slotIntervalMinutes: interval,
     slots,
   };
 }
@@ -255,24 +336,14 @@ router.post("/salons/:slug/bookings", publicFormLimiter, async (req, res, next) 
     const staff = staffId ? (bundle.staff || []).find((s: any) => s.id === staffId) : null;
     if (staffId && !staff) throw new ApiError(400, "Choose a valid team member.", "invalid_staff");
 
-    const availability = computeAvailability(row, bundle, date, service.id, staff?.id);
-    const slot = availability.slots.find((s: any) => s.time === time);
-    if (!slot || !slot.available) {
-      throw new ApiError(409, "That time is no longer available. Please choose another slot.", "slot_unavailable");
-    }
-
     const id = newId();
     const now = nowIso();
     const create = db.transaction(() => {
-      const existing = db
-        .prepare(
-          "SELECT COUNT(*) AS count FROM bookings WHERE salon_id = ? AND date = ? AND time = ? AND status IN ('pending','confirmed')" +
-            (staff?.id ? " AND staff_id = ?" : "")
-        )
-        .get(...(staff?.id ? [row.id, date, time, staff.id] : [row.id, date, time])) as { count: number };
-      const activeStaff = (bundle.staff || []).filter((s: any) => s.isActive !== false).length;
-      const capacity = staff?.id ? 1 : Math.max(1, activeStaff);
-      if (existing.count >= capacity) {
+      // Re-derive the grid inside the write transaction: the browser may be
+      // showing a slot that another guest took while this form was open.
+      const available = computeAvailability(row, bundle, date, service.id, staff?.id);
+      const slot = available.slots.find((s: any) => s.time === time);
+      if (!slot || !slot.available) {
         throw new ApiError(409, "That time was just booked. Please choose another slot.", "slot_unavailable");
       }
       db.prepare(
@@ -298,7 +369,9 @@ router.post("/salons/:slug/bookings", publicFormLimiter, async (req, res, next) 
         now
       );
     });
-    create();
+    // IMMEDIATE takes the write lock before the availability read, so two
+    // simultaneous requests cannot both pass the slot check.
+    create.immediate();
 
     const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(id) as any;
     void sendBookingEmails({

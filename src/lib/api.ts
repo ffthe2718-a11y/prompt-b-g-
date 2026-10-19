@@ -1,6 +1,7 @@
 import type {
   AdminApproval,
   AdminSalon,
+  ApprovalEvent,
   AdminStats,
   AdminSubscription,
   AdminUser,
@@ -498,6 +499,9 @@ export const adminApi = {
     return request<{ salon: Salon; owner: { name: string; email: string }; approval: AdminApproval }>(
       `/admin/salons/${id}/preview`
     );
+  },
+  async salonApproval(id: string) {
+    return request<{ approval: AdminApproval; history: ApprovalEvent[] }>(`/admin/salons/${id}/approval`);
   },
   async approveSalon(id: string, note = "") {
     return request<{ success: boolean; approvalStatus: string }>(`/admin/salons/${id}/approve`, {

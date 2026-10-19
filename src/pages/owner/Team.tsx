@@ -232,6 +232,7 @@ export default function Team({ salon, refresh }: { salon: Salon; refresh: () => 
                     <p className="truncate text-[9px] uppercase tracking-[0.12em] text-primary">{member.role || "Team member"}</p>
                   </div>
                   <Switch
+                    aria-label={`${member.name} visible on website`}
                     checked={member.isActive}
                     disabled={pendingId === member.id}
                     onCheckedChange={(checked) => void toggleActive(member, Boolean(checked))}

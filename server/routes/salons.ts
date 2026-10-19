@@ -19,6 +19,7 @@ import {
   safeImageUrl,
   safeLinkUrl,
   slugify,
+  timeToMinutes,
   toCents,
   isValidDate,
 } from "../validation";
@@ -46,6 +47,41 @@ router.use(requireAuth);
 function ownerSalon(req: any) {
   const user = (req as AuthedRequest).user!;
   return requireSalonOwner(user.id);
+}
+
+/**
+ * A booking may only occupy a slot that is free for its assigned team member.
+ * Used when an owner reassigns staff or restores a cancelled request.
+ */
+function assertBookingSlotFree(booking: any, salonId: string, nextStaffId: string | null, nextStatus: string) {
+  if (!nextStaffId || !["pending", "confirmed"].includes(nextStatus)) return;
+  const start = timeToMinutes(booking.time);
+  if (!Number.isFinite(start)) return;
+  const service = booking.service_id
+    ? (db.prepare("SELECT duration_minutes FROM services WHERE id = ?").get(booking.service_id) as any)
+    : null;
+  const duration = Math.max(5, Number(service?.duration_minutes) || 30);
+  const end = start + duration;
+  const others = db
+    .prepare(
+      `SELECT b.time, COALESCE(s.duration_minutes, 30) AS duration
+         FROM bookings b LEFT JOIN services s ON s.id = b.service_id
+        WHERE b.salon_id = ? AND b.date = ? AND b.id <> ? AND b.staff_id = ?
+          AND b.status IN ('pending','confirmed')`
+    )
+    .all(salonId, booking.date, booking.id, nextStaffId) as { time: string; duration: number }[];
+  const clash = others.some((other) => {
+    const otherStart = timeToMinutes(other.time);
+    const otherEnd = otherStart + Math.max(5, Number(other.duration) || 30);
+    return start < otherEnd && otherStart < end;
+  });
+  if (clash) {
+    throw new ApiError(
+      409,
+      "That team member already has an appointment overlapping this time.",
+      "slot_unavailable"
+    );
+  }
 }
 
 function ownerAppUrl(req: any): string {
@@ -875,6 +911,14 @@ router.patch("/me/bookings/:id", (req, res, next) => {
       updates.push({ column: "staff_id", value: staff?.id ?? null });
       updates.push({ column: "staff_name", value: staff?.name ?? "" });
     }
+    // Reassigning a guest onto a busy team member (or restoring a cancelled
+    // booking onto a slot that has since been taken) would double-book.
+    const nextStatus = String(req.body?.status ?? existing.status);
+    const nextStaffId = req.body?.staffId !== undefined ? (req.body.staffId ? String(req.body.staffId) : null) : existing.staff_id;
+    const touchesSchedule =
+      (req.body?.staffId !== undefined && nextStaffId !== existing.staff_id) ||
+      (req.body?.status !== undefined && nextStatus !== existing.status);
+    if (touchesSchedule) assertBookingSlotFree(existing, salon.id, nextStaffId, nextStatus);
     if (updates.length) {
       const setClause = updates.map((u) => `${u.column} = ?`).join(", ");
       db.prepare(`UPDATE bookings SET ${setClause}, updated_at = ? WHERE id = ?`).run(

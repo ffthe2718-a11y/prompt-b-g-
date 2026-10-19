@@ -539,6 +539,7 @@ export default function WebsiteEditor({
                     <p className="text-[9px] text-muted-foreground">Show the booking form on your website.</p>
                   </div>
                   <Switch
+                    aria-label="Accept online bookings"
                     checked={form.bookingSettings.enabled}
                     onCheckedChange={(checked) => update("bookingSettings", { ...form.bookingSettings, enabled: Boolean(checked) })}
                   />
@@ -653,6 +654,7 @@ export default function WebsiteEditor({
                     <ArrowDown className="h-3 w-3" />
                   </button>
                   <Switch
+                    aria-label={`Show ${section.label} section`}
                     checked={section.enabled}
                     onCheckedChange={(checked) => toggleSection(section.id, Boolean(checked))}
                     size="sm"

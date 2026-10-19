@@ -155,6 +155,15 @@ The approval workflow has its own suite (`scripts/test-approval.mjs`, 78 asserti
 blockers, email-verification gating, stale submissions, withdraw, reject/request-changes notes, approval → publish,
 post-approval edits, public snapshot immutability, unpublish, suspension and the audit trail. A third script
 (`scripts/test-google.mjs`, 17 assertions) drives the OAuth flow end to end against the fake Google server.
+The audit suite (`scripts/test-audit.mjs`, 66 assertions) covers the health probe, draft/unknown-tenant 404s, the
+capacity/duration grid, double-booking and reassignment conflicts, owner isolation, and the owner tools
+(subscribers, reminders, booking deletion):
+
+```bash
+cp data/salon-studio.db /tmp/audit.db
+DATABASE_PATH=/tmp/audit.db PORT=3200 PUBLIC_SITE_ORIGIN=http://localhost:3200 npx tsx server.ts &
+BASE=http://localhost:3200 node scripts/test-audit.mjs
+```
 
 Both extra suites read the database directly to simulate suspension and insert a known verification token, so pass the same
 throwaway `DATABASE_PATH`. Restart the API between full runs: sign-in rate limits are held in memory.
@@ -231,6 +240,15 @@ Registered → Onboarding → Draft → Pending approval → Approved → Publis
 - **Platform settings are public.** `platformName`, `supportEmail`, the announcement strip and the signups switch are read from `/api/public/config` and reflected on the marketing site, footer and sign-up screen.
 - **Unverified owners are nagged, not blocked silently.** A banner in the wizard and dashboard resends the verification link; submit/publish stay blocked until the address is confirmed.
 
+### Booking integrity
+
+- **One grid, two callers.** `computeAvailability` builds the slot list for `GET /api/public/salons/:slug/availability` and is re-run *inside* the booking transaction (`BEGIN IMMEDIATE`), so a stale browser can never double-book.
+- **Duration-aware.** A booking reserves its full service window, not just its start minute: a 3-hour colour hides every 30-minute slot underneath it. Slots also stop at `close − duration`.
+- **Real capacity.** With N active team members the salon can host N simultaneous appointments. Requests booked without a staff preference still consume one seat. Picking a specific member only clears when *that* member is free and a seat remains.
+- **Conflicts are 409s.** A taken slot returns `409 slot_unavailable`; the public form refreshes the grid and asks the guest to pick again. Reassigning a booking onto a busy member (or restoring a cancelled one onto a rebooked slot) is refused the same way.
+- **Database backstop.** `idx_bookings_staff_slot` is a partial unique index on `(salon_id, date, time, staff_id)` for live bookings. Any regression that slips past the application check surfaces as `409 conflict`, never a 500.
+- **Errors are not “closed”.** If the availability request fails (offline, 5xx, rate limit) the public form shows the reason plus **Try again** instead of pretending the salon is shut.
+
 ### Live addresses
 
 | Mode | Example | Setup |
@@ -255,9 +273,11 @@ NODE_ENV=production npm start
 4. Put the process behind a supervisor (systemd, Docker, Fly/Render/Railway) and send `SIGTERM` for graceful shutdown.
 5. Back up `data/salon-studio.db` (use `sqlite3 .backup` or copy while WAL is checkpointed) and `data/uploads/`.
 
-Health check: `GET /api/health` → `{"status":"ok","database":"sqlite",...}`.
+Health check: `GET /api/health` runs a real `SELECT 1` against SQLite and reports `{ status, database, publishedSalons, uptimeSeconds }`; it returns `503` if the database is unreachable.
 
 For subdomain or custom-domain traffic, point DNS at the same service and make sure your proxy passes the original `Host` header. Wildcard TLS is required for subdomains.
+
+Unknown tenants are real 404s in production: a slug or subdomain that is not `published` **and** `approved` returns the SPA shell with `404` and `X-Robots-Tag: noindex`, missing assets return a plain-text 404, and `/dashboard`/`/admin` pages are served with `noindex`. `sitemap.xml` lists only live, approved salons.
 
 ### Scripts
 
@@ -269,7 +289,10 @@ For subdomain or custom-domain traffic, point DNS at the same service and make s
 | `npm run seed` | Create the two demo salons (optional, destructive for those accounts only) |
 | `npm run typecheck` / `npm run lint` | Strict TypeScript check |
 | `npm run clean` | Remove `dist/` |
-| `node scripts/test-auth.mjs` | End-to-end auth/RBAC/isolation suite (see the local Google section) |
+| `node scripts/test-auth.mjs` | End-to-end auth/RBAC/isolation suite (59 assertions; see the local Google section) |
+| `node scripts/test-approval.mjs` | Approval workflow matrix (78 assertions; pass the same `DATABASE_PATH`) |
+| `node scripts/test-google.mjs` | Google OAuth flow against the fake IdP (17 assertions) |
+| `node scripts/test-audit.mjs` | Health, tenant 404s, booking capacity/conflicts and owner isolation (66 assertions) |
 | `node scripts/fake-google.mjs 4100` | Loopback-only Google OAuth stand-in for local testing |
 
 ---
@@ -319,4 +342,4 @@ src/types/salon.ts       Shared domain types and formatters
 - Plans, subscriptions and MRR are tracked and editable by super admins, but no payment gateway is connected — nobody is charged automatically.
 - SMS notifications are not sent — email (or console logging when SMTP is unconfigured) only.
 - SQLite is a single-node datastore. For multi-instance deployments, migrate the data layer to Postgres; the serializers isolate most of the SQL.
-- Booking times are stored as salon-local wall-clock times; reminder cron runs on server time.
+- Booking times are stored as salon-local wall-clock times; the reminder cron resolves "tomorrow" per salon timezone but runs on the server's 09:00 schedule.

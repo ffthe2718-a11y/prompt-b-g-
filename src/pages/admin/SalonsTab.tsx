@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import type { AdminSalon, SalonStatus, SubscriptionStatus } from "@/types/salon";
+import type { AdminSalon, ApprovalEvent, SalonStatus, SubscriptionStatus } from "@/types/salon";
 import { adminApi } from "@/lib/api";
 import { initials } from "@/lib/salonUi";
 import { StatusBadge } from "@/components/dashboard/ui";
 import { ApprovalBadge } from "@/components/dashboard/ApprovalPanel";
 import { toast } from "sonner";
 import {
+  Clock3,
   ExternalLink,
   Loader2,
   Search,
@@ -14,6 +15,7 @@ import {
   Store,
   Trash2,
   Undo2,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +45,20 @@ export default function SalonsTab({
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | SalonStatus>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [history, setHistory] = useState<{ salon: AdminSalon; entries: ApprovalEvent[] } | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const openHistory = async (salon: AdminSalon) => {
+    setHistoryLoading(true);
+    try {
+      const data = await adminApi.salonApproval(salon.id);
+      setHistory({ salon, entries: data.history });
+    } catch (error: any) {
+      toast.error(error?.message || "Could not load the review history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const load = useCallback(async (search: string, filter: string) => {
     try {
@@ -301,6 +317,15 @@ export default function SalonsTab({
                           </>
                         )}
                         <button
+                          onClick={() => void openHistory(salon)}
+                          disabled={historyLoading}
+                          className="rounded-md border border-border p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                          aria-label={`Approval history for ${salon.name}`}
+                          title="Approval history"
+                        >
+                          {historyLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Clock3 className="h-3 w-3" />}
+                        </button>
+                        <button
                           onClick={() => void removeSalon(salon)}
                           disabled={busyId === salon.id}
                           className="rounded-md border border-red-500/25 p-1.5 text-red-400/80 hover:text-red-400 disabled:opacity-50"
@@ -317,6 +342,51 @@ export default function SalonsTab({
           </div>
         )}
       </div>
+
+      {history && (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-primary">Approval history</p>
+                <h2 className="mt-1 text-[14px] font-semibold text-foreground">{history.salon.name}</h2>
+                <p className="mt-0.5 font-mono text-[8px] text-muted-foreground">/{history.salon.slug}</p>
+              </div>
+              <button
+                onClick={() => setHistory(null)}
+                className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground"
+                aria-label="Close approval history"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="mt-4 max-h-[55vh] overflow-y-auto">
+              {history.entries.length === 0 ? (
+                <p className="py-6 text-center text-[10px] text-muted-foreground">No review history yet.</p>
+              ) : (
+                <ol className="space-y-2.5">
+                  {history.entries.map((entry) => (
+                    <li key={entry.id} className="rounded-xl border border-border/70 bg-background/40 px-3 py-2">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-foreground">
+                          {entry.action.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-[8px] text-muted-foreground">
+                          {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : "—"}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[8px] text-muted-foreground">by {entry.actorEmail || "system"}</p>
+                      {entry.note && (
+                        <p className="mt-1.5 text-[9px] italic leading-relaxed text-muted-foreground/90">“{entry.note}”</p>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <p className="text-[8px] leading-relaxed text-muted-foreground/60">
         Suspending a salon hides its public website immediately. The owner keeps their data and can be restored at any
