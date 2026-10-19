@@ -111,6 +111,11 @@ export default function AdminDashboard() {
                 >
                   <Icon className={cn("h-3 w-3", active ? "text-primary" : "text-muted-foreground/70")} />
                   {entry.label}
+                  {entry.id === "approvals" && (stats?.pendingApprovals ?? 0) > 0 && (
+                    <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[7px] font-bold text-amber-400">
+                      {stats?.pendingApprovals}
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
+import { PlatformConfigProvider } from "@/context/PlatformConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PlatformLayout from "@/components/platform/PlatformLayout";
 import PlatformHome from "@/pages/PlatformHome";
@@ -103,85 +104,87 @@ function ScrollToTop() {
 export default function App() {
   return (
     <AuthProvider>
-      <TooltipProvider>
-        <Router>
-          <RouteTitle />
-          <ScrollToTop />
-          <div className="min-h-screen bg-background text-foreground selection:bg-primary/25 selection:text-foreground">
-            <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route element={<PlatformLayout />}>
-                <Route path="/" element={<PlatformHome />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/marketplace" element={<Marketplace />} />
-              </Route>
+      <PlatformConfigProvider>
+        <TooltipProvider>
+          <Router>
+            <RouteTitle />
+            <ScrollToTop />
+            <div className="min-h-screen bg-background text-foreground selection:bg-primary/25 selection:text-foreground">
+              <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route element={<PlatformLayout />}>
+                  <Route path="/" element={<PlatformHome />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                </Route>
 
-              <Route path="/login" element={<AuthPage mode="login" />} />
-              <Route path="/signup" element={<AuthPage mode="signup" />} />
-              <Route path="/auth/google/callback" element={<GoogleCallback />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/login" element={<AuthPage mode="login" />} />
+                <Route path="/signup" element={<AuthPage mode="signup" />} />
+                <Route path="/auth/google/callback" element={<GoogleCallback />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
 
-              <Route
-                path="/onboarding"
-                element={
-                  <ProtectedRoute requireOwner>
-                    <Onboarding />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute requireOwner>
-                    <OwnerDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/preview"
-                element={
-                  <ProtectedRoute requireOwner>
-                    <PreviewPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/:section"
-                element={
-                  <ProtectedRoute requireOwner>
-                    <OwnerDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/onboarding"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <Onboarding />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <OwnerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/preview"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <PreviewPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/:section"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <OwnerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/admin/preview/:id"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminSalonPreview />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/admin/preview/:id"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminSalonPreview />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route path="/s/:slug" element={<PublicSalon />} />
-              <Route path="/:slug" element={<PublicSalon />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            </Suspense>
-          </div>
-          <Toaster position="top-center" />
-        </Router>
-      </TooltipProvider>
+                <Route path="/s/:slug" element={<PublicSalon />} />
+                <Route path="/:slug" element={<PublicSalon />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              </Suspense>
+            </div>
+            <Toaster position="top-center" />
+          </Router>
+        </TooltipProvider>
+      </PlatformConfigProvider>
     </AuthProvider>
   );
 }

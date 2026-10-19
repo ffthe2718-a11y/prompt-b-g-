@@ -393,6 +393,10 @@ export interface AdminStats {
 
 export interface PlatformConfig {
   platformName: string;
+  supportEmail: string;
+  announcement: string;
+  signupsEnabled: boolean;
+  directoryVisible: boolean;
   baseDomain: string;
   siteOrigin: string;
   maxUploadMb: number;

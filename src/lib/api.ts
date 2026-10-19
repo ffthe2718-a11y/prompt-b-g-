@@ -183,7 +183,10 @@ export const authApi = {
     currentPassword?: string;
     newPassword?: string;
   }) {
-    return request<{ user: AuthUser }>("/auth/profile", { method: "PATCH", body: payload });
+    return request<{ user: AuthUser; verificationRequired?: boolean; verificationSent?: boolean }>(
+      "/auth/profile",
+      { method: "PATCH", body: payload }
+    );
   },
 };
 
@@ -288,6 +291,19 @@ export const salonApi = {
   },
   async deleteBooking(id: string) {
     return request<{ success: boolean }>(`/salons/me/bookings/${id}`, { method: "DELETE" });
+  },
+  async remindBooking(id: string) {
+    return request<{ success: boolean; delivered: boolean; message: string }>(
+      `/salons/me/bookings/${id}/reminder`,
+      { method: "POST" }
+    );
+  },
+
+  /* Newsletter */
+  async subscribers() {
+    return request<{ subscribers: { id: string; email: string; createdAt: string }[]; count: number }>(
+      "/salons/me/subscribers"
+    );
   },
 
   /* Reviews */
@@ -441,6 +457,12 @@ export const adminApi = {
   },
   async deleteUser(id: string) {
     return request<{ success: boolean }>(`/admin/users/${id}`, { method: "DELETE" });
+  },
+  async sendPasswordReset(id: string) {
+    return request<{ success: boolean; delivered: boolean; message: string }>(
+      `/admin/users/${id}/reset-password`,
+      { method: "POST" }
+    );
   },
   async subscriptions() {
     return request<{

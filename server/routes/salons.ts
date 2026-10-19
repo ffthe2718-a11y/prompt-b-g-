@@ -23,7 +23,7 @@ import {
   isValidDate,
 } from "../validation";
 import { getSettings } from "../settings";
-import { sendSalonStatusEmail } from "../emails";
+import { sendSalonStatusEmail, sendBookingStatusEmail, sendReminderEmail, type BookingEmailPayload } from "../emails";
 import {
   approvalState,
   markSubmitted,
@@ -454,6 +454,51 @@ router.post("/me/unpublish", (req, res, next) => {
   }
 });
 
+/** Shape a booking row + its salon into the payload the mail templates expect. */
+function bookingEmailPayload(salon: any, row: any): BookingEmailPayload {
+  return {
+    salon: {
+      name: salon.name,
+      email: salon.email,
+      phone: salon.phone,
+      address: salon.address,
+      city: salon.city,
+      slug: salon.slug,
+      currency: salon.currency || "INR",
+      timezone: salon.timezone || "Asia/Kolkata",
+    },
+    booking: {
+      id: row.id,
+      customerName: row.customer_name,
+      customerEmail: row.customer_email,
+      customerPhone: row.customer_phone,
+      serviceName: row.service_name,
+      staffName: row.staff_name,
+      date: row.date,
+      time: row.time,
+      notes: row.notes,
+      price: Math.round(row.price_cents) / 100,
+    },
+  };
+}
+
+/** Newsletter addresses collected by the public footer form. */
+router.get("/me/subscribers", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const rows = db
+      .prepare("SELECT id, email, created_at FROM subscribers WHERE salon_id = ? ORDER BY created_at DESC LIMIT 1000")
+      .all(salon.id) as any[];
+    const total = db.prepare("SELECT COUNT(*) AS count FROM subscribers WHERE salon_id = ?").get(salon.id) as any;
+    res.json({
+      subscribers: rows.map((row) => ({ id: row.id, email: row.email, createdAt: row.created_at })),
+      count: total?.count ?? rows.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/me/analytics", (req, res, next) => {
   try {
     const salon = ownerSalon(req);
@@ -839,6 +884,19 @@ router.patch("/me/bookings/:id", (req, res, next) => {
       );
     }
     const row = db.prepare("SELECT * FROM bookings WHERE id = ?").get(existing.id) as any;
+    // Keep the guest in the loop: a status change is only useful if the client
+    // who requested the appointment is told about it.
+    if (
+      req.body?.status !== undefined &&
+      row.status !== existing.status &&
+      ["confirmed", "cancelled", "completed"].includes(row.status) &&
+      row.customer_email
+    ) {
+      void sendBookingStatusEmail({
+        ...bookingEmailPayload(salon, row),
+        event: row.status as "confirmed" | "cancelled" | "completed",
+      });
+    }
     res.json({ booking: bookingRow(row) });
   } catch (error) {
     next(error);
@@ -851,6 +909,30 @@ router.delete("/me/bookings/:id", (req, res, next) => {
     assertOwnedResource("bookings", req.params.id, salon.id);
     db.prepare("DELETE FROM bookings WHERE id = ?").run(req.params.id);
     res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/** One-tap appointment reminder for pending/confirmed requests. */
+router.post("/me/bookings/:id/reminder", async (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const existing = assertOwnedResource("bookings", req.params.id, salon.id) as any;
+    if (!["pending", "confirmed"].includes(existing.status)) {
+      throw new ApiError(400, "Only pending or confirmed bookings can be reminded.", "not_remindable");
+    }
+    if (!existing.customer_email) {
+      throw new ApiError(400, "This booking has no customer email address.", "no_email");
+    }
+    const delivered = await sendReminderEmail(bookingEmailPayload(salon, existing));
+    res.json({
+      success: true,
+      delivered,
+      message: delivered
+        ? `Reminder sent to ${existing.customer_email}.`
+        : "Email is not configured on this server, so the reminder was logged instead of sent.",
+    });
   } catch (error) {
     next(error);
   }

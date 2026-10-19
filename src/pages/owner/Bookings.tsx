@@ -11,6 +11,8 @@ import {
   Clock3,
   Download,
   Mail,
+  BellRing,
+  Trash2,
   Phone,
   Search,
   X,
@@ -123,6 +125,34 @@ export default function Bookings({
       await refresh();
     } catch (error: any) {
       toast.error(error?.message || "Could not update this booking.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const sendReminder = async (booking: Booking) => {
+    setBusyId(booking.id);
+    try {
+      const result = await salonApi.remindBooking(booking.id);
+      if (result.delivered) toast.success(result.message);
+      else toast.warning(result.message);
+    } catch (error: any) {
+      toast.error(error?.message || "Could not send the reminder.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const removeBooking = async (booking: Booking) => {
+    if (!window.confirm(`Permanently delete ${booking.customerName}'s booking record? This cannot be undone.`)) return;
+    setBusyId(booking.id);
+    try {
+      await salonApi.deleteBooking(booking.id);
+      toast.success("Booking record deleted.");
+      setDetail(null);
+      await refresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Could not delete this booking.");
     } finally {
       setBusyId(null);
     }
@@ -332,6 +362,24 @@ export default function Bookings({
               >
                 Close
               </button>
+              {["pending", "confirmed"].includes(detail.status) && detail.customerEmail && (
+                <button
+                  onClick={() => void sendReminder(detail)}
+                  disabled={busyId === detail.id}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-foreground disabled:opacity-50"
+                >
+                  <BellRing className="h-3 w-3" /> Send reminder
+                </button>
+              )}
+              {detail.status === "cancelled" && (
+                <button
+                  onClick={() => void removeBooking(detail)}
+                  disabled={busyId === detail.id}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-red-500/25 px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-red-400/80 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete record
+                </button>
+              )}
               {detail.status !== "cancelled" && detail.status !== "completed" && (
                 <button
                   onClick={() => void changeStatus(detail, "cancelled")}

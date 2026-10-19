@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandMark } from "@/components/platform/Brand";
 import { useAuth } from "@/context/AuthContext";
+import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { authApi } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ function GoogleGlyph({ className }: { className?: string }) {
 
 export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
   const { user, loading, login, register } = useAuth();
+  const { signupsEnabled } = usePlatformConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
@@ -242,11 +244,12 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
               <div className="mt-8 space-y-4">
                 <button
                   type="button"
+                  disabled={isSignup && !signupsEnabled}
                   onClick={() => {
                     const returnTo = from || (isSignup ? "/onboarding" : "/dashboard");
                     window.location.href = authApi.googleStartUrl(returnTo);
                   }}
-                  className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-border bg-card/60 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground transition-colors hover:border-primary/50 hover:bg-card"
+                  className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-border bg-card/60 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground transition-colors hover:border-primary/50 hover:bg-card disabled:opacity-40"
                 >
                   <GoogleGlyph className="h-4 w-4" />
                   {isSignup ? "Sign up with Google" : "Continue with Google"}
@@ -365,6 +368,12 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
                 )}
               </div>
 
+              {isSignup && !signupsEnabled && (
+                <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-[11px] leading-relaxed text-amber-200">
+                  New sign-ups are paused right now. Existing owners can still sign in.
+                </div>
+              )}
+
               {error && (
                 <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-3.5 py-2.5 text-[11px] leading-relaxed text-red-300">
                   {error}
@@ -373,7 +382,7 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
 
               <Button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || (isSignup && !signupsEnabled)}
                 className="h-12 w-full rounded-full bg-primary text-[10px] font-bold uppercase tracking-[0.22em] text-black shadow-xl shadow-primary/10 hover:bg-primary/90"
               >
                 {submitting ? (

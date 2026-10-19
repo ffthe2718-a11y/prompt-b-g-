@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { publicApi } from "@/lib/api";
 import type { SalonSummary } from "@/types/salon";
 import SalonCard from "@/components/salon/SalonCard";
@@ -242,6 +243,7 @@ function HeroMockup() {
 
 export default function PlatformHome() {
   const { user } = useAuth();
+  const { supportEmail } = usePlatformConfig();
   const [salons, setSalons] = useState<SalonSummary[]>([]);
   const [loadingSalons, setLoadingSalons] = useState(true);
 
@@ -663,8 +665,8 @@ export default function PlatformHome() {
             </h2>
             <p className="mt-4 max-w-xs text-xs leading-relaxed text-muted-foreground">
               Still curious? Write to us at{" "}
-              <a href="mailto:hello@velvetstudio.app" className="text-primary hover:underline">
-                hello@velvetstudio.app
+              <a href={`mailto:${supportEmail}`} className="text-primary hover:underline">
+                {supportEmail}
               </a>
               .
             </p>

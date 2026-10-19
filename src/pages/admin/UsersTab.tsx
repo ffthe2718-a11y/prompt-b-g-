@@ -6,6 +6,7 @@ import { initials } from "@/lib/salonUi";
 import { toast } from "sonner";
 import {
   BadgeCheck,
+  KeyRound,
   Loader2,
   Mail,
   Search,
@@ -70,6 +71,20 @@ export default function UsersTab({ onChanged }: { onChanged: () => void }) {
       onChanged();
     } catch (error: any) {
       toast.error(error?.message || "Could not update this account.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const sendReset = async (target: AdminUser) => {
+    if (!window.confirm(`Email a single-use password reset link to ${target.email}?`)) return;
+    setBusyId(target.id);
+    try {
+      const result = await adminApi.sendPasswordReset(target.id);
+      if (result.delivered) toast.success(result.message);
+      else toast.warning(result.message);
+    } catch (error: any) {
+      toast.error(error?.message || "Could not send a reset link.");
     } finally {
       setBusyId(null);
     }
@@ -309,6 +324,15 @@ export default function UsersTab({ onChanged }: { onChanged: () => void }) {
                               <UserCog className="h-3 w-3" />
                             </button>
                           )}
+                          <button
+                            onClick={() => void sendReset(account)}
+                            disabled={busy}
+                            className="rounded-md border border-border p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                            aria-label="Send password reset link"
+                            title="Send password reset link"
+                          >
+                            <KeyRound className="h-3 w-3" />
+                          </button>
                           <button
                             onClick={() => void remove(account)}
                             disabled={busy || isSelf}

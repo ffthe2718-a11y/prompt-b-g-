@@ -3,7 +3,8 @@ import db, { nowIso } from "../db";
 import { AuthedRequest, requireAdmin, requireAuth } from "../auth";
 import { ApiError, cleanText, isEmail, normalizeEmail } from "../validation";
 import { privateSalonBundle, publicSalonBundle, reviewSummary, userPayload } from "../serializers";
-import { sendSalonStatusEmail } from "../emails";
+import { sendSalonStatusEmail, sendPasswordResetEmail } from "../emails";
+import { createHash, randomBytes } from "node:crypto";
 import {
   approvalHistory,
   contentHash,
@@ -204,22 +205,43 @@ router.patch("/users/:id", (req, res, next) => {
   }
 });
 
-router.post("/users/:id/reset-password", (req, res, next) => {
+router.post("/users/:id/reset-password", async (req, res, next) => {
   try {
     const actor = currentAdmin(req);
     const row = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id) as any;
     if (!row) throw new ApiError(404, "User not found.", "not_found");
-    // Never expose or email a generated password from here; just clear resets
-    // so the owner must go through the audited forgot-password flow.
+
+    // Super admins send a single-use link; they never see or set the password.
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const now = nowIso();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     db.prepare("DELETE FROM password_resets WHERE user_id = ? AND used_at IS NULL").run(row.id);
+    db.prepare(
+      "INSERT INTO password_resets (token_hash, user_id, expires_at, used_at, created_at) VALUES (?, ?, ?, NULL, ?)"
+    ).run(tokenHash, row.id, expiresAt, now);
+
+    const delivered = await sendPasswordResetEmail({
+      to: row.email,
+      name: row.name || "there",
+      resetUrl: `${appUrl(req)}/reset-password?token=${token}`,
+    });
+
     logAudit({
       actorId: actor.id,
       actorEmail: actor.email,
-      action: "password_reset_cleared",
+      action: "password_reset_requested",
       targetType: "user",
       targetId: row.id,
+      detail: delivered ? "email" : "logged-only",
     });
-    res.json({ success: true, message: "Outstanding reset links were cleared." });
+    res.json({
+      success: true,
+      delivered,
+      message: delivered
+        ? `A password reset link is on its way to ${row.email}.`
+        : "Email is not configured on this server, so the link was only written to the server log.",
+    });
   } catch (error) {
     next(error);
   }
@@ -339,6 +361,21 @@ router.patch("/salons/:id/status", (req, res, next) => {
     } else {
       db.prepare("UPDATE salons SET status = ?, updated_at = ? WHERE id = ?").run(status, nowIso(), row.id);
     }
+
+    if (status === "suspended" && row.status !== "suspended") {
+      const owner = db.prepare("SELECT name, email FROM users WHERE id = ?").get(row.owner_id) as any;
+      if (owner?.email) {
+        void sendSalonStatusEmail({
+          to: owner.email,
+          ownerName: owner.name || "there",
+          salonName: row.name,
+          event: "suspended",
+          note: cleanText(req.body?.note, 2000),
+          dashboardUrl: `${appUrl(req)}/dashboard`,
+        });
+      }
+    }
+
     logAudit({
       actorId: actor.id,
       actorEmail: actor.email,
@@ -699,7 +736,20 @@ router.post("/salons/:id/unpublish", (req, res, next) => {
     if (row.status !== "published") {
       throw new ApiError(400, "This website is not currently published.", "not_published");
     }
+    const note = cleanText(req.body?.note, 2000);
     db.prepare("UPDATE salons SET status = 'draft', updated_at = ? WHERE id = ?").run(nowIso(), row.id);
+    const owner = db.prepare("SELECT name, email FROM users WHERE id = ?").get(row.owner_id) as any;
+    if (owner?.email) {
+      void sendSalonStatusEmail({
+        to: owner.email,
+        ownerName: owner.name || "there",
+        salonName: row.name,
+        event: "unpublished",
+        note,
+        siteUrl: row.slug ? `${appUrl(req)}/${row.slug}` : "",
+        dashboardUrl: `${appUrl(req)}/dashboard`,
+      });
+    }
     logAudit({
       actorId: actor.id,
       actorEmail: actor.email,

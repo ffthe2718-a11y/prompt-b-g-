@@ -97,10 +97,18 @@ export default function Settings({
       return;
     }
     setProfileSaving(true);
+    const nextEmail = email.trim().toLowerCase();
+    const emailChanged = Boolean(user?.email) && user!.email.toLowerCase() !== nextEmail;
     try {
-      await authApi.updateProfile({ name: name.trim(), email: email.trim().toLowerCase() });
+      await authApi.updateProfile({ name: name.trim(), email: nextEmail });
       await refreshUser();
-      toast.success("Account details updated.");
+      if (emailChanged) {
+        toast.success("Email updated. Confirm the new address to keep publishing.", {
+          description: "We sent a verification link to the new address. Submitting and publishing are paused until it is confirmed.",
+        });
+      } else {
+        toast.success("Account details updated.");
+      }
     } catch (error: any) {
       toast.error(error?.message || "Could not update your account.");
     } finally {

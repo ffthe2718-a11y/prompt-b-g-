@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { ArrowUpRight, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { BrandMark } from "@/components/platform/Brand";
 
@@ -16,6 +17,8 @@ const owners = [
 ];
 
 export default function PlatformFooter() {
+  const { platformName, supportEmail } = usePlatformConfig();
+  const supportHref = `mailto:${supportEmail || "hello@velvetstudio.app"}`;
   return (
     <footer className="border-t border-border bg-gradient-to-b from-background via-card/40 to-black">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-14 sm:px-8 lg:px-12">
@@ -72,11 +75,11 @@ export default function PlatformFooter() {
               Questions about launching your salon online? We usually reply within one business day.
             </p>
             <a
-              href="mailto:hello@velvetstudio.app"
+              href={supportHref}
               className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary"
             >
               <Mail className="h-3.5 w-3.5 text-primary" />
-              hello@velvetstudio.app
+              {supportEmail}
             </a>
             <Link
               to="/signup"
@@ -92,16 +95,16 @@ export default function PlatformFooter() {
 
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border/70 pt-6 text-center sm:flex-row sm:text-left">
           <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
-            © {new Date().getFullYear()} Velvet Salon Studio. Built for independent businesses.
+            © {new Date().getFullYear()} {platformName}. Built for independent businesses.
           </p>
           <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
             <Link to="/pricing" className="hover:text-primary">
               Pricing
             </Link>
-            <a href="mailto:hello@velvetstudio.app?subject=Privacy" className="hover:text-primary">
+            <a href={`${supportHref}?subject=Privacy`} className="hover:text-primary">
               Privacy
             </a>
-            <a href="mailto:hello@velvetstudio.app?subject=Terms" className="hover:text-primary">
+            <a href={`${supportHref}?subject=Terms`} className="hover:text-primary">
               Terms
             </a>
           </div>

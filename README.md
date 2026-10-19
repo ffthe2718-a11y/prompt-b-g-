@@ -222,6 +222,15 @@ Registered → Onboarding → Draft → Pending approval → Approved → Publis
 - Reviews are always live; the dashboard flags `hasUnpublishedChanges` when the draft is newer than the snapshot.
 - Suspended salons are blocked at both the public API and the admin level.
 
+### Notifications & owner tools
+
+- **Guests hear back.** A booking request emails the salon, then every status change emails the client: `confirmed`, `cancelled`, `completed` (`sendBookingStatusEmail`). A daily cron sends tomorrow's reminders, and owners can send one immediately from **Bookings → Send reminder** (`POST /api/salons/me/bookings/:id/reminder`).
+- **Website decisions reach the owner.** Submit, approve, reject, request-changes, admin unpublish and suspension all send email (falling back to a server log when SMTP is unset); reject/request-changes notes are included.
+- **Newsletter list is usable.** Footer sign-ups land in `subscribers`; the owner's **Analytics** tab lists them with Copy and **Export CSV** (`GET /api/salons/me/subscribers`).
+- **Admins can unlock accounts.** **Admin → Users → key icon** emails a single-use reset link (`POST /api/admin/users/:id/reset-password`); the password itself is never generated or shown.
+- **Platform settings are public.** `platformName`, `supportEmail`, the announcement strip and the signups switch are read from `/api/public/config` and reflected on the marketing site, footer and sign-up screen.
+- **Unverified owners are nagged, not blocked silently.** A banner in the wizard and dashboard resends the verification link; submit/publish stay blocked until the address is confirmed.
+
 ### Live addresses
 
 | Mode | Example | Setup |

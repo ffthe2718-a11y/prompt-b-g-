@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Review, Salon } from "@/types/salon";
 import { salonApi } from "@/lib/api";
 import { initials } from "@/lib/salonUi";
@@ -37,12 +37,35 @@ export default function Reviews({ salon, refresh }: { salon: Salon; refresh: () 
   const [deleting, setDeleting] = useState<Review | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
-  const reviews = useMemo(
-    () => [...salon.reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [salon.reviews]
+  // The dashboard bundle carries reviews, but re-reading the collection keeps
+  // this screen honest when a client posts a review while it is open.
+  const [reviews, setReviews] = useState<Review[]>(salon.reviews);
+
+  useEffect(() => {
+    setReviews(salon.reviews);
+  }, [salon.reviews]);
+
+  useEffect(() => {
+    let alive = true;
+    salonApi
+      .listReviews()
+      .then((data) => {
+        if (alive) setReviews(data.reviews);
+      })
+      .catch(() => {
+        /* the bundled reviews remain usable */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const sorted = useMemo(
+    () => [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [reviews]
   );
 
-  const published = reviews.filter((review) => review.status === "published");
+  const published = sorted.filter((review) => review.status === "published");
   const average = published.length
     ? published.reduce((sum, review) => sum + review.rating, 0) / published.length
     : 0;
@@ -51,7 +74,7 @@ export default function Reviews({ salon, refresh }: { salon: Salon; refresh: () 
     count: published.filter((review) => review.rating === rating).length,
   }));
 
-  const visible = reviews.filter((review) => filter === "all" || review.status === filter);
+  const visible = sorted.filter((review) => filter === "all" || review.status === filter);
 
   const toggleVisibility = async (review: Review) => {
     const next = review.status === "published" ? "hidden" : "published";

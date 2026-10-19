@@ -151,9 +151,16 @@ export async function sendBookingEmails(payload: BookingEmailPayload): Promise<v
   await Promise.allSettled(jobs);
 }
 
-export async function sendReminderEmail(payload: BookingEmailPayload): Promise<void> {
+export async function sendReminderEmail(payload: BookingEmailPayload): Promise<boolean> {
   const transport = getTransporter();
-  if (!transport || !payload.booking.customerEmail) return;
+  if (!transport || !payload.booking.customerEmail) {
+    if (!transport) {
+      console.log(
+        `[booking] reminder for ${payload.salon.slug} → ${payload.booking.customerEmail || "no email"} (SMTP not configured)`
+      );
+    }
+    return false;
+  }
   const { salon, booking } = payload;
   const from = process.env.SMTP_FROM || `"${salon.name}" <${process.env.SMTP_USER}>`;
   await transport
@@ -171,6 +178,66 @@ export async function sendReminderEmail(payload: BookingEmailPayload): Promise<v
         </div>`,
     })
     .catch((error) => console.warn("[email] reminder failed:", error?.message || error));
+  return true;
+}
+
+export type BookingStatusEvent = "confirmed" | "cancelled" | "completed";
+
+/**
+ * Tells the client what happened to their request. Without this the public
+ * booking form is a one-way message and guests never learn the outcome.
+ */
+export async function sendBookingStatusEmail(
+  payload: BookingEmailPayload & { event: BookingStatusEvent }
+): Promise<boolean> {
+  const transport = getTransporter();
+  const { salon, booking, event } = payload;
+  if (!transport || !booking.customerEmail) {
+    if (!transport) {
+      console.log(
+        `[booking] ${event} mail for ${salon.slug} → ${booking.customerEmail || "no email"} (SMTP not configured)`
+      );
+    }
+    return false;
+  }
+  const copy: Record<BookingStatusEvent, { subject: string; heading: string; body: string }> = {
+    confirmed: {
+      subject: `Your appointment at ${salon.name} is confirmed`,
+      heading: "Your appointment is confirmed",
+      body: `<p>Hello ${esc(booking.customerName)},</p><p>Good news — ${esc(salon.name)} confirmed your appointment. We look forward to seeing you.</p>`,
+    },
+    cancelled: {
+      subject: `Your appointment at ${salon.name} was cancelled`,
+      heading: "Your appointment was cancelled",
+      body: `<p>Hello ${esc(booking.customerName)},</p><p>${esc(salon.name)} cancelled the appointment below. If this was not expected, contact the salon and they will help you rebook.</p>`,
+    },
+    completed: {
+      subject: `Thanks for visiting ${salon.name}`,
+      heading: "Thanks for visiting",
+      body: `<p>Hello ${esc(booking.customerName)},</p><p>We hope you enjoyed your visit to ${esc(salon.name)}. If you have a moment, a review on our website helps other clients.</p>`,
+    },
+  };
+  const content = copy[event];
+  const from = process.env.SMTP_FROM || `"${salon.name}" <${process.env.SMTP_USER}>`;
+  await transport
+    .sendMail({
+      from,
+      to: booking.customerEmail,
+      replyTo: salon.email || undefined,
+      subject: content.subject,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#241f1c">
+          <h2 style="margin:0 0 4px">${esc(content.heading)}</h2>
+          <p style="color:#6b625b;margin:0 0 20px">${esc(salon.name)}</p>
+          ${content.body}
+          ${bookingSummaryHtml(payload)}
+          <p style="font-size:13px;color:#6b625b">Need to make a change? Contact the salon${
+            salon.phone ? ` at ${esc(salon.phone)}` : ""
+          }${salon.email ? ` or reply to ${esc(salon.email)}` : ""}.</p>
+        </div>`,
+    })
+    .catch((error) => console.warn("[email] booking status failed:", error?.message || error));
+  return true;
 }
 
 /* ------------------------------------------------------------------ */
@@ -261,7 +328,7 @@ export async function sendPasswordResetEmail(options: {
   return true;
 }
 
-export type SalonEmailEvent = "submitted" | "approved" | "rejected" | "changes_requested" | "unpublished";
+export type SalonEmailEvent = "submitted" | "approved" | "rejected" | "changes_requested" | "unpublished" | "suspended";
 
 /**
  * Transactional mail for the review workflow. Approval mail is the only place a
@@ -318,6 +385,15 @@ export async function sendSalonStatusEmail(options: {
         <p>A platform administrator unpublished <strong>${esc(options.salonName)}</strong>, so it is no longer reachable at its public URL.</p>
         ${options.note ? `<p style="font-size:13px;color:#6b625b">${esc(options.note)}</p>` : ""}
         <p>Your content and approvals are intact. Contact support if you believe this was a mistake.</p>`,
+      cta: "Open your dashboard",
+    },
+    suspended: {
+      subject: `${options.salonName} has been suspended`,
+      heading: "Your salon is suspended",
+      body: `<p>Hello ${esc(options.ownerName)},</p>
+        <p>A platform administrator suspended <strong>${esc(options.salonName)}</strong>. Your website is offline and submissions are paused until the account is restored.</p>
+        ${options.note ? `<p style="font-size:13px;color:#6b625b">${esc(options.note)}</p>` : ""}
+        <p>Your content is intact. Reply to this email or contact support to resolve it.</p>`,
       cta: "Open your dashboard",
     },
   };

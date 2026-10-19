@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import type { Analytics as AnalyticsData, Salon } from "@/types/salon";
 import { formatPrice } from "@/types/salon";
-import { BarChart3, Eye, Mail, Star, TrendingUp } from "lucide-react";
+import { BarChart3, Copy, Download, Eye, Mail, Star, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import { salonApi } from "@/lib/api";
 import { Panel, SectionHeading, StatCard } from "@/components/dashboard/ui";
 
 export default function Analytics({
@@ -10,6 +13,56 @@ export default function Analytics({
   salon: Salon;
   analytics: AnalyticsData | null;
 }) {
+  const [subscribers, setSubscribers] = useState<{ id: string; email: string; createdAt: string }[]>([]);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    salonApi
+      .subscribers()
+      .then((data) => {
+        if (!alive) return;
+        setSubscribers(data.subscribers);
+        setSubscriberCount(data.count);
+      })
+      .catch(() => {
+        /* the headline count from analytics is still shown */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const subscriberEmails = subscribers.map((entry) => entry.email);
+
+  const exportSubscribers = () => {
+    if (subscribers.length === 0) {
+      toast.error("No newsletter subscribers to export yet.");
+      return;
+    }
+    const csv = ["Email,Subscribed", ...subscribers.map((entry) => `"${entry.email}","${entry.createdAt}"`)].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${salon.slug}-subscribers.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${subscribers.length} subscriber${subscribers.length === 1 ? "" : "s"} exported.`);
+  };
+
+  const copySubscribers = async () => {
+    if (subscriberEmails.length === 0) {
+      toast.error("There are no subscriber emails to copy yet.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(subscriberEmails.join(", "));
+      toast.success("Subscriber emails copied.");
+    } catch {
+      toast.error("Your browser blocked clipboard access. Use Export CSV instead.");
+    }
+  };
+
   if (!analytics) {
     return (
       <Panel>
@@ -40,7 +93,12 @@ export default function Analytics({
             hint="Last 14 days"
             icon={<TrendingUp className="h-3.5 w-3.5" />}
           />
-          <StatCard label="Subscribers" value={String(analytics.subscribers)} hint="Newsletter sign-ups" icon={<Mail className="h-3.5 w-3.5" />} />
+          <StatCard
+            label="Subscribers"
+            value={String(subscriberCount || analytics.subscribers)}
+            hint="Newsletter sign-ups"
+            icon={<Mail className="h-3.5 w-3.5" />}
+          />
         </div>
       </Panel>
 
@@ -150,6 +208,52 @@ export default function Analytics({
               </div>
             ))}
           </div>
+        )}
+      </Panel>
+
+      <Panel>
+        <SectionHeading
+          title="Newsletter subscribers"
+          description="Collected by the sign-up form in your website footer. Export the list for a campaign."
+          action={
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => void copySubscribers()}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-[8px] font-bold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Copy className="h-3 w-3" /> Copy
+              </button>
+              <button
+                onClick={exportSubscribers}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 text-[8px] font-bold uppercase tracking-[0.12em] text-primary"
+              >
+                <Download className="h-3 w-3" /> Export CSV
+              </button>
+            </div>
+          }
+        />
+        {subscribers.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-8 text-center text-[10px] text-muted-foreground">
+            No sign-ups yet. The footer of your published website invites visitors to join your list.
+          </div>
+        ) : (
+          <>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {subscribers.slice(0, 12).map((entry) => (
+                <div key={entry.id} className="truncate rounded-lg border border-border bg-background/40 px-3 py-2 text-[10px] text-foreground">
+                  {entry.email}
+                  <span className="ml-2 text-[8px] text-muted-foreground">
+                    {new Date(entry.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {subscribers.length > 12 && (
+              <p className="mt-2 text-[9px] text-muted-foreground">
+                Showing the 12 most recent of {subscriberCount}. Export for the full list.
+              </p>
+            )}
+          </>
         )}
       </Panel>
     </div>
