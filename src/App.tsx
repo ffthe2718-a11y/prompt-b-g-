@@ -1,170 +1,190 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
-import { I18nProvider } from "@/context/I18nContext";
-import { AnimatePresence, motion } from "motion/react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import Home from "@/pages/Home";
-import Services from "@/pages/Services";
-import Gallery from "@/pages/Gallery";
-import About from "@/pages/About";
-import Book from "@/pages/Book";
-import BundledServices from "@/pages/BundledServices";
-import Dashboard from "@/pages/Dashboard";
-import AdminMembers from "@/pages/AdminMembers";
-import AdminShops from "@/pages/AdminShops";
-import AdminHomeServices from "@/pages/AdminHomeServices";
-import AdminAnalytics from "@/pages/AdminAnalytics";
-import PartnerWithUs from "@/pages/PartnerWithUs";
-import ShopLanding from "@/pages/ShopLanding";
-import ShopEditor from "@/pages/ShopEditor";
-import Marketplace from "@/pages/Marketplace";
-import ReferralDashboard from "@/pages/ReferralDashboard";
+import { PlatformConfigProvider } from "@/context/PlatformConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PlatformLayout from "@/components/platform/PlatformLayout";
+import PlatformHome from "@/pages/PlatformHome";
+import Pricing from "@/pages/Pricing";
+import Marketplace from "@/pages/Marketplace";
+import AuthPage from "@/pages/AuthPage";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import NotFound from "@/pages/NotFound";
+import GoogleCallback from "@/pages/GoogleCallback";
+import VerifyEmail from "@/pages/VerifyEmail";
 
-function AnimatedRoutes() {
-  const location = useLocation();
+/* Heavier, logged-in and public-site surfaces are split into their own chunks
+   so first-time visitors only download the marketing pages. */
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const OwnerDashboard = lazy(() => import("@/pages/owner/OwnerDashboard"));
+const PreviewPage = lazy(() => import("@/pages/owner/PreviewPage"));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const PublicSalon = lazy(() => import("@/pages/PublicSalon"));
+const AdminSalonPreview = lazy(() => import("@/pages/admin/SalonPreview"));
 
+function RouteFallback() {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Routes location={location}>
-          <Route path="/" element={<Home />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/bundles" element={<BundledServices />} />
-          <Route path="/bundled-services" element={<BundledServices />} />
-          <Route path="/book" element={<Book />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/about" element={<About />} />
-          <Route 
-            path="/add-customer" 
-            element={
-              <ProtectedRoute>
-                <Book />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminMembers />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/analytics" 
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminAnalytics />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminAnalytics />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/home-services" 
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminHomeServices />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/shops" 
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminShops />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/partner" 
-            element={
-              <ProtectedRoute>
-                <PartnerWithUs />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/become-partner" 
-            element={
-              <ProtectedRoute>
-                <PartnerWithUs />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/shop/:slug" element={<ShopLanding />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/referrals" element={<ReferralDashboard />} />
-          <Route path="/referral-dashboard" element={<ReferralDashboard />} />
-          <Route 
-            path="/dashboard/shop-editor" 
-            element={
-              <ProtectedRoute>
-                <ShopEditor />
-              </ProtectedRoute>
-            } 
-          />
-          {/* Catch-all 404 route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </motion.div>
-    </AnimatePresence>
+    <div className="flex min-h-[60vh] items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-[9px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Loading</span>
+      </div>
+    </div>
   );
 }
 
-import ScrollToTopButton from "@/components/ScrollToTopButton";
-import MobileBottomDock from "@/components/MobileBottomDock";
-import FloatingWhatsAppButton from "@/components/FloatingWhatsAppButton";
+const ROUTE_TITLES: { pattern: RegExp; title: string }[] = [
+  { pattern: /^\/$/, title: "Velvet Salon Studio — Websites & booking for independent salons" },
+  { pattern: /^\/pricing$/, title: "Pricing · Velvet Salon Studio" },
+  { pattern: /^\/marketplace$/, title: "Live salon websites · Velvet Salon Studio" },
+  { pattern: /^\/login$/, title: "Sign in · Velvet Salon Studio" },
+  { pattern: /^\/signup$/, title: "Create your salon website · Velvet Salon Studio" },
+  { pattern: /^\/forgot-password$/, title: "Reset your password · Velvet Salon Studio" },
+  { pattern: /^\/reset-password$/, title: "Choose a new password · Velvet Salon Studio" },
+  { pattern: /^\/verify-email$/, title: "Confirm your email · Velvet Salon Studio" },
+  { pattern: /^\/auth\/google\/callback$/, title: "Signing in with Google · Velvet Salon Studio" },
+  { pattern: /^\/onboarding$/, title: "Set up your salon · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/preview$/, title: "Website preview · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/website$/, title: "Website editor · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/services$/, title: "Services · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/team$/, title: "Team · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/gallery$/, title: "Gallery · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/bookings$/, title: "Bookings · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/reviews$/, title: "Reviews · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/analytics$/, title: "Analytics · Velvet Salon Studio" },
+  { pattern: /^\/dashboard\/settings$/, title: "Settings · Velvet Salon Studio" },
+  { pattern: /^\/dashboard$/, title: "Overview · Velvet Salon Studio" },
+  { pattern: /^\/admin$/, title: "Platform admin · Velvet Salon Studio" },
+];
+
+function RouteTitle() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const match = ROUTE_TITLES.find((entry) => entry.pattern.test(pathname));
+    // Public salon pages manage their own title from the salon's SEO settings.
+    if (match) document.title = match.title;
+
+    // Private consoles should never be indexed.
+    const privateArea = /^\/(admin|dashboard|onboarding|reset-password|auth\/google)/.test(pathname);
+    let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (privateArea) {
+      if (!robots) {
+        robots = document.createElement("meta");
+        robots.name = "robots";
+        document.head.appendChild(robots);
+      }
+      robots.content = "noindex, nofollow";
+    } else if (robots) {
+      robots.remove();
+    }
+  }, [pathname]);
+  return null;
+}
+
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      const target = document.getElementById(hash.replace(/^#/, ""));
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [pathname, hash]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <AuthProvider>
-      <I18nProvider>
+      <PlatformConfigProvider>
         <TooltipProvider>
           <Router>
-            <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 pb-16 md:pb-0">
-              <Navbar />
-              <main>
-                <AnimatedRoutes />
-              </main>
-              <Footer />
-              <MobileBottomDock />
-              <FloatingWhatsAppButton />
-              <ScrollToTopButton />
-              <Toaster position="top-center" />
+            <RouteTitle />
+            <ScrollToTop />
+            <div className="min-h-screen bg-background text-foreground selection:bg-primary/25 selection:text-foreground">
+              <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route element={<PlatformLayout />}>
+                  <Route path="/" element={<PlatformHome />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                </Route>
+
+                <Route path="/login" element={<AuthPage mode="login" />} />
+                <Route path="/signup" element={<AuthPage mode="signup" />} />
+                <Route path="/auth/google/callback" element={<GoogleCallback />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+
+                <Route
+                  path="/onboarding"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <Onboarding />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <OwnerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/preview"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <PreviewPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/:section"
+                  element={
+                    <ProtectedRoute requireOwner>
+                      <OwnerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/admin/preview/:id"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminSalonPreview />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route path="/s/:slug" element={<PublicSalon />} />
+                <Route path="/:slug" element={<PublicSalon />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              </Suspense>
             </div>
+            <Toaster position="top-center" />
           </Router>
         </TooltipProvider>
-      </I18nProvider>
+      </PlatformConfigProvider>
     </AuthProvider>
   );
 }

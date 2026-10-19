@@ -5,4 +5,11 @@ coverage/
 .DS_Store
 *.log
 .env*
-!.env.example
+
+# Runtime data — never commit salon databases or uploaded client images
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/.jwt-secret
+data/uploads/
+!data/.gitkeep
