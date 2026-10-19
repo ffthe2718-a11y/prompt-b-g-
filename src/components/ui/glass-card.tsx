@@ -30,7 +30,7 @@ export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
     const defaultTransition = {
       duration: 0.7,
       delay,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as const,
     };
 
     const hoverAnimation = hoverEffect
@@ -95,7 +95,7 @@ export const MotionSection = React.forwardRef<HTMLElement, MotionSectionProps>(
     const defaultTransition = {
       duration: 0.8,
       delay,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as const,
     };
 
     return (
