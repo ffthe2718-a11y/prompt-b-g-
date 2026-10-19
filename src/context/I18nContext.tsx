@@ -14,8 +14,8 @@ const translations: Translations = {
     hi: "बेस्ट सैलून और हेयर सर्विसेज।"
   },
   "hero.subtitle": {
-    en: "Best Hair, Beard & Beauty Salons in Mumbai",
-    hi: "मुंबई में बेहतरीन हेयर, बियर्ड और ब्यूटी सैलून"
+    en: "Best Hair, Beard & Beauty Salons in Jaipur",
+    hi: "जयपुर में बेहतरीन हेयर, बियर्ड और ब्यूटी सैलून"
   },
   "nav.home": {
     en: "Home",

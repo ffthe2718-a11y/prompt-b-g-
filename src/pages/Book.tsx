@@ -275,7 +275,7 @@ export default function Book() {
   const [homeAddress, setHomeAddress] = useState({
     street: "",
     landmark: "",
-    city: "Mumbai",
+    city: "Jaipur",
     pincode: ""
   });
   const [distanceKm, setDistanceKm] = useState<number>(3.5);
@@ -384,7 +384,7 @@ export default function Book() {
       const activeReferralCode = appliedReferral?.code || (referralCodeInput.trim() ? referralCodeInput.trim().toUpperCase() : null);
       
       const fullDeliveryAddress = serviceType === 'home' 
-        ? `${homeAddress.street.trim()}${homeAddress.landmark.trim() ? ', Near ' + homeAddress.landmark.trim() : ''}, ${homeAddress.city.trim() || 'Mumbai'} - ${homeAddress.pincode.trim()}`
+        ? `${homeAddress.street.trim()}${homeAddress.landmark.trim() ? ', Near ' + homeAddress.landmark.trim() : ''}, ${homeAddress.city.trim() || 'Jaipur'} - ${homeAddress.pincode.trim()}`
         : null;
 
       const baseAppointmentData = {
@@ -406,7 +406,7 @@ export default function Book() {
         deliveryAddress: serviceType === 'home' ? {
           street: homeAddress.street.trim(),
           landmark: homeAddress.landmark.trim(),
-          city: homeAddress.city.trim() || "Mumbai",
+          city: homeAddress.city.trim() || "Jaipur",
           pincode: homeAddress.pincode.trim(),
           fullAddress: fullDeliveryAddress
         } : null,
@@ -592,7 +592,7 @@ export default function Book() {
       setHomeAddress({
         street: "",
         landmark: "",
-        city: "Mumbai",
+        city: "Jaipur",
         pincode: ""
       });
     } catch (error) {
@@ -2267,12 +2267,12 @@ export default function Book() {
                 <div className="flex justify-between items-start gap-4">
                   <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Delivery Address</span>
                   <span className="font-medium text-right text-zinc-200 text-[11px] max-w-[240px]">
-                    {lastBooking.fullAddress || lastBooking.deliveryAddress?.fullAddress}
+                    {lastBooking?.fullAddress || lastBooking?.deliveryAddress?.fullAddress}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Distance Surcharge</span>
-                  <span className="font-mono text-amber-400 font-semibold">{lastBooking.distanceKm} km (₹{lastBooking.homeServiceFee})</span>
+                  <span className="font-mono text-amber-400 font-semibold">{lastBooking?.distanceKm} km (₹{lastBooking?.homeServiceFee})</span>
                 </div>
               </>
             )}
@@ -2297,7 +2297,7 @@ export default function Book() {
             {lastBooking?.stylist && (
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Specialist</span>
-                <span className="font-semibold text-primary">{lastBooking.stylist}</span>
+                <span className="font-semibold text-primary">{lastBooking?.stylist}</span>
               </div>
             )}
 
@@ -2310,13 +2310,13 @@ export default function Book() {
               <div className="flex justify-between items-center text-[11px]">
                 <span className="text-zinc-400">25% Mandatory Advance:</span>
                 <span className={cn("font-mono font-bold", lastBooking?.advancePaid ? "text-emerald-400" : "text-amber-400")}>
-                  {lastBooking?.advancePaid ? `Paid (₹${lastBooking.advanceAmountPaid})` : `Pending (₹${lastBooking.advanceRequired})`}
+                  {lastBooking?.advancePaid ? `Paid (₹${lastBooking?.advanceAmountPaid})` : `Pending (₹${lastBooking?.advanceRequired})`}
                 </span>
               </div>
               {lastBooking?.transactionId && (
                 <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
                   <span>Txn Ref:</span>
-                  <span>{lastBooking.transactionId}</span>
+                  <span>{lastBooking?.transactionId}</span>
                 </div>
               )}
               <div className="flex justify-between items-center text-xs font-bold pt-1 border-t border-border/40">

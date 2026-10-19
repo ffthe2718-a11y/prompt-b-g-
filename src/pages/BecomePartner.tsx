@@ -220,7 +220,7 @@ export default function BecomePartner() {
                     <div className="space-y-2">
                       <Label className="text-xs uppercase tracking-widest text-muted-foreground">Location</Label>
                       <Input 
-                        placeholder="e.g. Bandra West, Mumbai"
+                        placeholder="e.g. C-Scheme, Jaipur"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                         className="bg-background/80 border-border"

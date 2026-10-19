@@ -180,7 +180,7 @@ export const DEFAULT_SERVICE_REVIEWS: ServiceReviewItem[] = [
     userName: "Neha Shah",
     userPhoto: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200",
     rating: 5,
-    title: "Zero frizzy hair even in Mumbai humidity!",
+    title: "Zero frizzy hair with amazing smoothness!",
     comment: "Transformed my unmanageable frizzy hair into glass-smooth hair. Cuts my morning routine down to 5 minutes.",
     tags: ["Flawless Technique", "Master Artistry"],
     recommend: true,

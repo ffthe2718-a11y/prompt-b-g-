@@ -238,7 +238,7 @@ export default function BundledServices() {
         service: bookingTarget.title,
         date: selectedDate.toISOString(),
         time: formData.time,
-        address: formData.address || "Aurelia Luxe Mumbai Flagship Suite",
+        address: formData.address || "Royal Tresses Jaipur Flagship Suite",
         stylist: formData.stylist,
         isBundle: true,
         bundleId: bookingTarget.bundle?.id || "custom-bundle",

@@ -877,6 +877,81 @@ export default function LoyaltyRewards({
           )}
         </div>
       </section>
+
+      {/* Rewards Redemption Center Section */}
+      <section className="space-y-6 pt-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-serif font-bold text-foreground tracking-tight flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Rewards Redemption Center
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Convert your loyalty points earned from previous appointments into instant booking discount vouchers.
+            </p>
+          </div>
+          <div className="bg-card border border-border px-4 py-2 rounded-2xl flex items-center gap-3">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Available Balance:</span>
+            <span className="text-lg font-mono font-bold text-primary">{totalPoints} Pts</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { id: "red-300", title: "₹300 Off Next Booking", pointsCost: 300, code: "REDEEM300", desc: "Get ₹300 instant discount on any haircut or beard styling service." },
+            { id: "red-600", title: "₹600 Off Deluxe Treatment", pointsCost: 600, code: "REDEEM600", desc: "Save ₹600 on balayage, keratin smoothing, or facial treatments." },
+            { id: "red-25pct", title: "25% Off Entire Bill", pointsCost: 1000, code: "REDEEM25PCT", desc: "Unlock 25% off your next luxury salon session at any partner atelier." },
+          ].map((voucher) => {
+            const canAfford = totalPoints >= voucher.pointsCost;
+            return (
+              <div key={voucher.id} className="rounded-3xl border border-border/80 bg-card p-6 shadow-xl flex flex-col justify-between group hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] font-mono font-bold">
+                      {voucher.pointsCost} Points
+                    </Badge>
+                    <span className={cn("text-[10px] font-mono uppercase tracking-wider", canAfford ? "text-emerald-400" : "text-zinc-500")}>
+                      {canAfford ? "Ready to Redeem" : `Need ${voucher.pointsCost - totalPoints} more pts`}
+                    </span>
+                  </div>
+
+                  <h4 className="text-base font-serif font-bold text-foreground group-hover:text-primary transition-colors mb-1.5">
+                    {voucher.title}
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {voucher.desc}
+                  </p>
+                </div>
+
+                <div className="pt-5 mt-5 border-t border-border/60 flex items-center justify-between">
+                  <div className="text-[11px] font-mono text-zinc-400">
+                    Code: <strong className="text-primary">{voucher.code}</strong>
+                  </div>
+
+                  <Button
+                    disabled={!canAfford}
+                    onClick={() => {
+                      navigator.clipboard.writeText(voucher.code);
+                      toast.success(`Successfully redeemed ${voucher.title}!`, {
+                        description: `Promo code ${voucher.code} copied to clipboard for checkout.`
+                      });
+                    }}
+                    className={cn(
+                      "rounded-full text-[10px] font-bold uppercase tracking-widest px-5 h-9 shadow-md transition-all",
+                      canAfford 
+                        ? "bg-primary text-black hover:bg-primary/90 shadow-primary/20" 
+                        : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                    )}
+                  >
+                    Redeem Voucher
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

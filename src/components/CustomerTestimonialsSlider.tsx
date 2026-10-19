@@ -57,7 +57,7 @@ export default function CustomerTestimonialsSlider() {
   // Review submission state
   const [newReview, setNewReview] = useState({
     name: user?.displayName || "",
-    location: "Mumbai",
+    location: "C-Scheme, Jaipur",
     rating: 5,
     treatment: "Bespoke Dimensional Balayage",
     category: "Hair & Balayage" as CategoryFilter,
@@ -77,7 +77,7 @@ export default function CustomerTestimonialsSlider() {
             return {
               id: doc.id,
               clientName: data.clientName || data.name || "Aurelia Client",
-              location: data.location || "Mumbai",
+              location: data.location || "Jaipur",
               avatar: data.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200`,
               rating: Number(data.rating) || 5,
               reviewTitle: data.reviewTitle || data.title || "Exceptional Service",
@@ -190,7 +190,7 @@ export default function CustomerTestimonialsSlider() {
       setIsSubmitModalOpen(false);
       setNewReview({
         name: "",
-        location: "Mumbai",
+        location: "C-Scheme, Jaipur",
         rating: 5,
         treatment: "Bespoke Dimensional Balayage",
         category: "Hair & Balayage",
@@ -248,7 +248,7 @@ export default function CustomerTestimonialsSlider() {
             WORDS OF <span className="italic text-primary font-serif">EXCELLENCE</span>
           </h2>
           <p className="text-xs md:text-sm text-muted-foreground mt-2 max-w-xl leading-relaxed">
-            Discover why Mumbai's elite professionals, brides, and style icons trust Aurelia Luxe Studios for their signature transformations.
+            Discover why Jaipur's elite professionals, brides, and style icons trust Royal Tresses for their signature transformations.
           </p>
         </div>
 
@@ -278,7 +278,7 @@ export default function CustomerTestimonialsSlider() {
               <DialogHeader>
                 <DialogTitle className="text-xl font-serif text-primary">Share Your Salon Experience</DialogTitle>
                 <DialogDescription className="text-xs text-zinc-400">
-                  Your feedback helps maintain the gold standard of luxury styling in Mumbai.
+                  Your feedback helps maintain the gold standard of luxury styling in Jaipur.
                 </DialogDescription>
               </DialogHeader>
 
@@ -297,7 +297,7 @@ export default function CustomerTestimonialsSlider() {
                   <div className="space-y-1.5">
                     <Label className="text-[10px] uppercase tracking-wider text-zinc-400">Neighborhood / City</Label>
                     <Input 
-                      placeholder="e.g. Bandra, Mumbai" 
+                      placeholder="e.g. C-Scheme, Jaipur" 
                       value={newReview.location}
                       onChange={(e) => setNewReview({ ...newReview, location: e.target.value })}
                       className="h-10 text-xs bg-zinc-900 border-zinc-800 text-white"

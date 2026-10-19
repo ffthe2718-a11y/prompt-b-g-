@@ -197,7 +197,7 @@ export default function AdminHomeServices() {
     const verifiedDeposit = appointments.filter((a) => a.advancePaid);
     const totalVerifiedAmount = verifiedDeposit.reduce((acc, curr) => acc + (curr.advanceAmountPaid || 0), 0);
     const totalPendingAmount = pendingDeposit.reduce((acc, curr) => {
-      const due = curr.advanceRequired || Math.round((curr.totalAmount || 0) * 0.25);
+      const due = curr?.advanceRequired || Math.round((curr?.totalAmount || 0) * 0.25);
       return acc + due;
     }, 0);
     const avgDistance = total > 0 ? (appointments.reduce((acc, curr) => acc + (curr.distanceKm || 0), 0) / total).toFixed(1) : "0";
@@ -275,11 +275,11 @@ export default function AdminHomeServices() {
           valA = a.date ? new Date(a.date).getTime() : 0;
           valB = b.date ? new Date(b.date).getTime() : 0;
         } else if (sortKey === "advanceRequired") {
-          valA = a.advanceRequired || Math.round((a.totalAmount || 0) * 0.25);
-          valB = b.advanceRequired || Math.round((b.totalAmount || 0) * 0.25);
+          valA = a?.advanceRequired || Math.round((a?.totalAmount || 0) * 0.25);
+          valB = b?.advanceRequired || Math.round((b?.totalAmount || 0) * 0.25);
         } else if (sortKey === "distanceKm") {
-          valA = a.distanceKm || 0;
-          valB = b.distanceKm || 0;
+          valA = a?.distanceKm || 0;
+          valB = b?.distanceKm || 0;
         }
 
         if (sortOrder === "asc") {
@@ -291,7 +291,7 @@ export default function AdminHomeServices() {
 
   // Open verification dialog
   const handleOpenVerifyModal = (app: HomeServiceAppointment) => {
-    const defaultAdvance = app.advanceRequired || Math.round((app.totalAmount || 0) * 0.25);
+    const defaultAdvance = app?.advanceRequired || Math.round((app?.totalAmount || 0) * 0.25);
     const autoTxn = "TXN_MGR_" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
     setVerifyingAppointment(app);
@@ -905,7 +905,7 @@ export default function AdminHomeServices() {
                                   </span>
                                 )}
                                 <span className="text-[10px] text-muted-foreground mt-0.5 font-mono">
-                                  {app.deliveryAddress.city || "Mumbai"} - {app.deliveryAddress.pincode || "400001"}
+                                  {app.deliveryAddress.city || "Jaipur"} - {app.deliveryAddress.pincode || "302001"}
                                 </span>
                                 <div className="flex items-center gap-2 mt-1.5">
                                   <button

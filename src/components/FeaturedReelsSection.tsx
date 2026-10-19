@@ -96,7 +96,7 @@ export default function FeaturedReelsSection() {
           FEATURED <span className="italic font-serif text-primary">VIDEO REELS</span>
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-xs text-muted-foreground leading-relaxed">
-          Watch real client transformation reels from our master colorists, stylists, and bridal artists in Mumbai.
+          Watch real client transformation reels from our master colorists, stylists, and bridal artists in Jaipur.
         </p>
       </div>
 

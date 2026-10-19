@@ -57,8 +57,8 @@ const MOCK_SALON_SHOPS: Shop[] = CURATED_SHOPS.map((c, index) => ({
   rating: c.rating,
   ratingCount: c.ratingCount,
   priceRange: c.priceRange,
-  latitude: 19.0596 + index * 0.015, // Realistic Mumbai coordinates
-  longitude: 72.8295 + index * 0.012,
+  latitude: 26.9124 + index * 0.015, // Realistic Jaipur coordinates
+  longitude: 75.7873 + index * 0.012,
   content: {
     services: c.services || [
       { name: "Couture Haircut & Styling", price: "₹1,500", description: "Bespoke consultation & master finish" },
@@ -282,7 +282,7 @@ export default function Marketplace() {
             FIND SALONS <span className="italic text-primary">NEAR YOU</span>
           </h1>
           <p className="max-w-2xl mx-auto text-muted-foreground leading-relaxed">
-            Find top barbers, salons, and hair stylists across Mumbai. Check services, prices, ratings, and book your appointment online.
+            Find top barbers, salons, and hair stylists across Jaipur. Check services, prices, ratings, and book your appointment online.
           </p>
 
           <div className="mt-12 max-w-4xl mx-auto space-y-6">

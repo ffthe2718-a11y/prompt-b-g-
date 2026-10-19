@@ -26,13 +26,13 @@ export default function About() {
             </h1>
             <div className="space-y-6 text-base font-light leading-relaxed text-muted-foreground">
               <p>
-                Founded in 2015, Aurelia Luxe brings together top hair stylists, makeup artists, and beauty experts across Mumbai. We offer high-quality salon services, hair treatments, and bridal styling at fair, transparent prices.
+                Founded in 2015, Royal Tresses brings together expert hair stylists, makeup artists, and beauty specialists across Jaipur. We offer high-quality salon services, hair treatments, and royal bridal styling at transparent prices.
               </p>
               <p>
-                Located in top areas of Mumbai like Bandra, Juhu, and Colaba, our partner salons are clean, comfortable, and equipped with modern styling tools.
+                Located in top VIP areas of Jaipur like C-Scheme, Malviya Nagar, and Vaishali Nagar, our salons are clean, luxurious, and equipped with modern styling tools.
               </p>
               <p>
-                From relaxing herbal oil Champi head massages to smooth keratin treatments and HD bridal makeup, we make sure every visit leaves you feeling confident.
+                From relaxing Ayurvedic Champi head massages to smooth keratin treatments and HD bridal makeup, we make sure every visit leaves you feeling pampered and radiant.
               </p>
             </div>
           </motion.div>
@@ -54,10 +54,10 @@ export default function About() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 text-white">
                 <span className="text-[10px] uppercase tracking-widest text-primary font-bold block mb-1">
-                  Bandra Salon Branch
+                  C-Scheme Executive Flagship
                 </span>
                 <p className="text-xs text-zinc-300 font-light">
-                  101 Turner Road, Bandra West, Mumbai • Private Styling Rooms
+                  Near Statue Circle, C-Scheme, Jaipur • Private Styling Suites
                 </p>
               </div>
             </div>

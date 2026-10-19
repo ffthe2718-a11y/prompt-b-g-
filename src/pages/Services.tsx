@@ -28,7 +28,7 @@ export default function Services() {
               NEED A <span className="italic font-serif text-primary">CUSTOM CONSULTATION</span>?
             </h3>
             <p className="mx-auto mb-8 text-sm text-muted-foreground leading-relaxed">
-              Whether preparing for a royal wedding, seeking a total color makeover, or requesting bespoke at-home salon care in Mumbai, our master artisans provide personalized 1-on-1 consultations.
+              Whether preparing for a royal wedding, seeking a total color makeover, or requesting bespoke at-home salon care in Jaipur, our master artisans provide personalized 1-on-1 consultations.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button asChild className="w-full sm:w-auto rounded-full bg-primary px-8 py-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 shadow-xl shadow-primary/20">

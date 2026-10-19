@@ -312,7 +312,7 @@ export default function PartnerWithUs() {
                       <Input 
                         value={formData.location} 
                         onChange={e => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="Bandra West, Mumbai, Maharashtra"
+                        placeholder="C-Scheme, Jaipur, Rajasthan"
                         className="bg-black border-zinc-900 focus:border-primary py-6"
                       />
                     </div>

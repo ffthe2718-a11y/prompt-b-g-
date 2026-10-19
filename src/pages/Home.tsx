@@ -105,7 +105,7 @@ export default function Home() {
             </h1>
 
             <p className="mb-6 sm:mb-10 max-w-md text-xs sm:text-sm leading-relaxed text-muted-foreground">
-              Get top-quality hair cuts, beard styling, Ayurvedic Champi, and hair coloring from expert stylists across Mumbai.
+              Get top-quality hair cuts, beard styling, Ayurvedic Champi, and hair coloring from expert stylists across Jaipur.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-4">
@@ -220,7 +220,7 @@ export default function Home() {
                       <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">
                         <span className="flex items-center gap-1 text-zinc-300 truncate">
                           <MapPin className="h-3 w-3 text-primary shrink-0" />
-                          <span className="truncate">{shop.location || "Mumbai"}</span>
+                          <span className="truncate">{shop.location || "Jaipur"}</span>
                         </span>
                         <span className="text-zinc-600">•</span>
                         <span className="flex items-center gap-0.5 text-amber-400 font-semibold shrink-0">
@@ -264,7 +264,7 @@ export default function Home() {
             Looking for Haircare or Beard Grooming?
           </h2>
           <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-bold opacity-80">
-            Book top salon appointments in Mumbai.
+            Book top salon appointments in Jaipur.
           </p>
         </div>
         <Button asChild className="w-full sm:w-auto h-11 rounded-full bg-primary px-6 text-xs font-bold uppercase tracking-widest text-black hover:bg-primary/90 whitespace-nowrap shadow-lg shadow-primary/10">
@@ -352,7 +352,7 @@ export default function Home() {
               <Button asChild className="w-full h-13 rounded-full bg-primary text-black hover:bg-primary/90 text-xs font-bold uppercase tracking-[0.2em] shadow-xl shadow-primary/20">
                 <Link to="/book">Book Appointment Now</Link>
               </Button>
-              <p className="text-[9px] text-zinc-500 text-center mt-3 tracking-widest uppercase">Instant Confirmation • Easy Reschedule • Mumbai</p>
+              <p className="text-[9px] text-zinc-500 text-center mt-3 tracking-widest uppercase">Instant Confirmation • Easy Reschedule • Jaipur</p>
             </div>
           </motion.div>
         </div>

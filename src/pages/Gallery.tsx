@@ -140,7 +140,7 @@ export default function Gallery() {
             PHOTOS & <span className="italic font-serif text-primary">HAIRSTYLES</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Explore real haircuts, hair coloring, bridal makeup, and beard styles done by expert stylists at our partner salons in Mumbai.
+            Explore real haircuts, hair coloring, bridal makeup, and beard styles done by expert stylists at our Royal Tresses Jaipur salon branches.
           </p>
         </motion.div>
 

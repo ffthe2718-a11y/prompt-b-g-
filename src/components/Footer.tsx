@@ -87,17 +87,17 @@ export default function Footer() {
             <Link to="/" className="inline-block group">
               <div className="flex items-center gap-2">
                 <Scissors className="h-6 w-6 text-primary rotate-45 group-hover:rotate-90 transition-transform duration-500" />
-                <span className="text-2xl md:text-3xl font-serif tracking-[0.15em] uppercase text-primary font-bold">
-                  Aurelia Salon
+                <span className="text-xl md:text-2xl font-serif tracking-[0.15em] uppercase text-primary font-bold">
+                  Royal Tresses
                 </span>
               </div>
               <span className="text-[9px] uppercase tracking-[0.4em] text-zinc-500 font-mono block mt-1">
-                Top Haircuts, Beauty & Bridal Salon • Mumbai
+                Luxury Salon & Spa • Jaipur
               </span>
             </Link>
 
             <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">
-              Get top haircuts, beard grooming, HD bridal makeup, and relaxing herbal oil Champi head massages across top salon branches in Mumbai.
+              Get expert haircuts, beard styling, HD bridal makeup, and relaxing Ayurvedic Champi head massages across our luxury Jaipur salon branches.
             </p>
 
             {/* Social Engagement Community Box */}
@@ -183,32 +183,40 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Flagship Mumbai Ateliers */}
+          {/* Jaipur VIP Ateliers */}
           <div className="lg:col-span-3 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground border-l-2 border-primary pl-3">
-              Our Mumbai Branches
+              Jaipur VIP Branches
             </h4>
             <div className="space-y-3 text-xs text-muted-foreground">
               <div className="p-3 rounded-xl border border-zinc-900 bg-background/50 space-y-1">
-                <p className="font-bold text-white text-xs">Bandra Salon Branch</p>
+                <p className="font-bold text-white text-xs">C-Scheme Executive Flagship</p>
                 <p className="flex items-center gap-1 text-[11px] text-zinc-400">
                   <MapPin className="h-3 w-3 text-primary shrink-0" />
-                  101 Turner Road, Bandra West, Mumbai
+                  Near Statue Circle, C-Scheme, Jaipur
                 </p>
               </div>
 
               <div className="p-3 rounded-xl border border-zinc-900 bg-background/50 space-y-1">
-                <p className="font-bold text-white text-xs">Colaba Salon Branch</p>
+                <p className="font-bold text-white text-xs">Malviya Nagar Uptown Studio</p>
                 <p className="flex items-center gap-1 text-[11px] text-zinc-400">
                   <MapPin className="h-3 w-3 text-primary shrink-0" />
-                  Arthur Bunder Road, Colaba, Mumbai
+                  Near World Trade Park, Malviya Nagar, Jaipur
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl border border-zinc-900 bg-background/50 space-y-1">
+                <p className="font-bold text-white text-xs">Vaishali Nagar Wellness Oasis</p>
+                <p className="flex items-center gap-1 text-[11px] text-zinc-400">
+                  <MapPin className="h-3 w-3 text-primary shrink-0" />
+                  Amrapali Circle, Vaishali Nagar, Jaipur
                 </p>
               </div>
 
               <div className="pt-1 flex flex-col gap-3">
-                <a href="tel:+919876543210" className="flex items-center gap-2 text-zinc-300 hover:text-primary transition-colors text-xs font-mono">
+                <a href="tel:+919829012345" className="flex items-center gap-2 text-zinc-300 hover:text-primary transition-colors text-xs font-mono">
                   <Phone className="h-3.5 w-3.5 text-primary" />
-                  <span>Call Us: +91 98765 43210</span>
+                  <span>Call Us: +91 98290 12345</span>
                 </a>
 
                 {/* Direct Front Desk WhatsApp Chat Card */}
@@ -219,17 +227,17 @@ export default function Footer() {
                     </div>
                     <div>
                       <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
-                        <span>Mumbai Front Desk</span>
+                        <span>Jaipur Front Desk</span>
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Front Desk Online" />
                       </h5>
                       <p className="text-[10px] text-emerald-300/80 font-mono">Live WhatsApp Help</p>
                     </div>
                   </div>
                   <p className="text-[11px] text-zinc-300 leading-relaxed font-light">
-                    Have questions about prices, available slots, or home service in Mumbai? Chat directly with our front desk.
+                    Have questions about prices, available slots, or bridal packages in Jaipur? Chat directly with our front desk.
                   </p>
                   <a
-                    href={`https://wa.me/${SALON_WHATSAPP.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Namaste! I would like to ask a question about salon services and availability in Mumbai.")}`}
+                    href={`https://wa.me/${SALON_WHATSAPP.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Namaste! I would like to ask a question about salon services and availability in Jaipur.")}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/50 hover:scale-[1.02]"
@@ -302,11 +310,11 @@ export default function Footer() {
         {/* Bottom Legal & Copyright Bar */}
         <div className="border-t border-zinc-900 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-[10px] uppercase tracking-[0.25em] text-zinc-500 font-mono">
-            <span>© {new Date().getFullYear()} Aurelia Luxe Studio.</span>
+            <span>© {new Date().getFullYear()} Royal Tresses Jaipur.</span>
             <span className="hidden sm:inline text-zinc-800">•</span>
             <span>All Rights Reserved.</span>
             <span className="hidden sm:inline text-zinc-800">•</span>
-            <span className="text-zinc-400">Mumbai • India</span>
+            <span className="text-zinc-400">Jaipur • India</span>
           </div>
 
           <div className="flex items-center gap-6 text-xs text-zinc-500">

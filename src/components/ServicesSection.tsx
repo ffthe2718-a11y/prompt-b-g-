@@ -75,15 +75,15 @@ export interface ServiceCategory {
 
 export const CURATED_SERVICE_CATEGORIES: ServiceCategory[] = [
   {
-    id: "styling-cuts",
-    title: "Haircuts & Styling",
-    tagline: "Expert Haircuts & Modern Hair Styling",
-    description: "Custom haircuts, beard shaping, and blowouts tailored for your face shape and personal look.",
+    id: "hair-care",
+    title: "Hair Care",
+    tagline: "Expert Haircuts, Color, Balayage & Keratin Styling",
+    description: "Custom haircuts, beard shaping, balayage highlights, and restorative keratin smoothing treatments.",
     image: "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=1200",
-    altText: "Master hair stylist performing precision haircut, sectioning hair with professional shears in a luxury salon environment",
+    altText: "Master hair stylist performing precision haircut and styling in luxury salon environment",
     accentColor: "from-amber-500/20 via-primary/10 to-transparent",
-    badge: "Popular Choice",
-    startingPrice: "from ₹800",
+    badge: "Hair Expert",
+    startingPrice: "from ₹1,000",
     items: [
       {
         name: "Expert Haircut & Blowdry",
@@ -103,28 +103,6 @@ export const CURATED_SERVICE_CATEGORIES: ServiceCategory[] = [
         popular: false,
         atHomeAvailable: true,
       },
-      {
-        name: "Traditional Ayurvedic Champi",
-        price: "₹800",
-        rawPrice: 800,
-        desc: "Relaxing head massage with warm herbal oils to relieve stress and strengthen hair roots.",
-        duration: "30 mins",
-        popular: true,
-        atHomeAvailable: true,
-      }
-    ]
-  },
-  {
-    id: "treatments-color",
-    title: "Hair Color & Treatments",
-    tagline: "Balayage, Highlights & Keratin Care",
-    description: "Custom hair color formulations, dimensional balayage, and restorative keratin smoothing treatments.",
-    image: "https://images.unsplash.com/photo-1560869713-7d0a29430803?auto=format&fit=crop&q=80&w=1200",
-    altText: "Master colorist hand-painting dimensional balayage highlights on long lustrous hair using foil technique",
-    accentColor: "from-amber-500/20 via-primary/10 to-transparent",
-    badge: "Color Specialist",
-    startingPrice: "from ₹2,500",
-    items: [
       {
         name: "Balayage & Foil Highlights",
         price: "₹4,500",
@@ -155,22 +133,22 @@ export const CURATED_SERVICE_CATEGORIES: ServiceCategory[] = [
     ]
   },
   {
-    id: "spa-wellness",
-    title: "Skin Facials & Scalp Spa",
-    tagline: "24K Gold Facials & Herbal Scalp Care",
-    description: "Revitalizing botanical skin facials and herbal scalp treatments for a healthy natural glow.",
-    image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1200",
-    altText: "Client relaxing during luxury 24K gold foil facial treatment with gentle facial massage",
+    id: "traditional-rituals",
+    title: "Traditional Rituals",
+    tagline: "Ayurvedic Champi & Herbal Scalp Therapies",
+    description: "Ancestral herbal therapies, warm oil head massage, and deep cleansing scalp treatments for root strength.",
+    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
+    altText: "Traditional ayurvedic herbal scalp oil massage therapy in a serene sanctuary",
     accentColor: "from-amber-500/20 via-primary/10 to-transparent",
-    badge: "Glowing Skin",
-    startingPrice: "from ₹1,800",
+    badge: "Ancestral Care",
+    startingPrice: "from ₹800",
     items: [
       {
-        name: "24K Gold Revival Facial",
-        price: "₹2,800",
-        rawPrice: 2800,
-        desc: "24K gold foil infusion, deep skin cleanse, exfoliation mask, and lymphatic drainage facial massage.",
-        duration: "60 mins",
+        name: "Traditional Ayurvedic Champi",
+        price: "₹800",
+        rawPrice: 800,
+        desc: "Relaxing head massage with warm herbal oils to relieve stress and strengthen hair roots.",
+        duration: "30 mins",
         popular: true,
         atHomeAvailable: true,
       },
@@ -195,14 +173,36 @@ export const CURATED_SERVICE_CATEGORIES: ServiceCategory[] = [
     ]
   },
   {
-    id: "bridal-ceremonial",
-    title: "Bridal & Party Makeover",
-    tagline: "HD Bridal Makeup & Mehendi Art",
-    description: "Long-lasting HD camera-ready makeup, designer mehendi, and saree draping for weddings and festive events.",
-    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1200",
-    altText: "Indian bride wearing HD bridal makeup with ornate gold jewelry and traditional silk red dupatta",
+    id: "skin-care",
+    title: "Skin Care",
+    tagline: "24K Gold Facials & Botanical Glow Treatments",
+    description: "Revitalizing botanical skin facials, gold foil infusions, and deep pore cleansing for a glowing complexion.",
+    image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1200",
+    altText: "Client relaxing during luxury 24K gold foil facial treatment with gentle massage",
     accentColor: "from-amber-500/20 via-primary/10 to-transparent",
-    badge: "Bridal Master",
+    badge: "Radiant Glow",
+    startingPrice: "from ₹2,800",
+    items: [
+      {
+        name: "24K Gold Revival Facial",
+        price: "₹2,800",
+        rawPrice: 2800,
+        desc: "24K gold foil infusion, deep skin cleanse, exfoliation mask, and lymphatic drainage facial massage.",
+        duration: "60 mins",
+        popular: true,
+        atHomeAvailable: true,
+      }
+    ]
+  },
+  {
+    id: "bridal",
+    title: "Bridal",
+    tagline: "HD Bridal Makeup, Mehendi & Draping",
+    description: "Long-lasting waterproof HD camera-ready makeup, designer organic mehendi, and traditional saree draping.",
+    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1200",
+    altText: "Indian bride wearing exquisite HD bridal makeup and gold ornaments",
+    accentColor: "from-amber-500/20 via-primary/10 to-transparent",
+    badge: "Bridal Suite",
     startingPrice: "from ₹1,200",
     items: [
       {
@@ -806,10 +806,10 @@ export default function ServicesSection({
                     : "bg-card/60 border-border/80 text-muted-foreground hover:text-foreground hover:border-primary/40"
                 )}
               >
-                {cat.id === "styling-cuts" && <Scissors className="h-3.5 w-3.5" />}
-                {cat.id === "treatments-color" && <Sparkles className="h-3.5 w-3.5" />}
-                {cat.id === "spa-wellness" && <Heart className="h-3.5 w-3.5" />}
-                {cat.id === "bridal-ceremonial" && <Crown className="h-3.5 w-3.5" />}
+                {cat.id === "hair-care" && <Scissors className="h-3.5 w-3.5" />}
+                {cat.id === "traditional-rituals" && <Sparkles className="h-3.5 w-3.5" />}
+                {cat.id === "skin-care" && <Heart className="h-3.5 w-3.5" />}
+                {cat.id === "bridal" && <Crown className="h-3.5 w-3.5" />}
                 <span>{cat.title}</span>
               </button>
             );

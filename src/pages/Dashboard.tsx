@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import LoyaltyRewards from "@/components/LoyaltyRewards";
+import MyRewardsCard from "@/components/MyRewardsCard";
 import { useAppointmentReminders } from "@/hooks/useAppointmentReminders";
 import {
   Table,
@@ -125,8 +126,8 @@ export default function Dashboard() {
     try {
       await new Promise(res => setTimeout(res, 850));
       const txnId = `AUR-DEP-${Math.floor(100000 + Math.random() * 900000)}`;
-      const depositAmount = payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 1500) * 0.25);
-      const total = payingDepositAppointment.totalAmount || (depositAmount * 4);
+      const depositAmount = payingDepositAppointment?.advanceRequired || Math.round((payingDepositAppointment?.totalAmount || 1500) * 0.25);
+      const total = payingDepositAppointment?.totalAmount || (depositAmount * 4);
       const remaining = total - depositAmount;
 
       const docRef = doc(db, "customers", payingDepositAppointment.id);
@@ -448,8 +449,8 @@ export default function Dashboard() {
     try {
       await new Promise(res => setTimeout(res, 1000));
       const mockTxnId = "TXN_DEP_" + Math.random().toString(36).substring(2, 9).toUpperCase();
-      const advanceDue = payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25);
-      const remaining = Math.max(0, (payingDepositAppointment.totalAmount || 0) - advanceDue);
+      const advanceDue = payingDepositAppointment?.advanceRequired || Math.round((payingDepositAppointment?.totalAmount || 0) * 0.25);
+      const remaining = Math.max(0, (payingDepositAppointment?.totalAmount || 0) - advanceDue);
 
       await updateDoc(doc(db, "customers", payingDepositAppointment.id), {
         advancePaid: true,
@@ -575,6 +576,13 @@ export default function Dashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-8 bg-card border border-border">
             <TabsTrigger value="appointments" className="data-[state=active]:bg-primary data-[state=active]:text-black">My Appointments</TabsTrigger>
+            <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-black flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-zinc-400" />
+              Past Appointments
+              <span className="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded leading-none">
+                {pastAppointments.length}
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="loyalty" className="data-[state=active]:bg-primary data-[state=active]:text-black flex items-center gap-1.5">
               <Crown className="h-4 w-4 text-amber-400" />
               Loyalty Rewards
@@ -606,66 +614,89 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="appointments">
-            {/* Loyalty Rewards Quick Progress Bar & Repeat Booking Incentive */}
-            <div className="mb-8 rounded-2xl border border-primary/25 bg-gradient-to-r from-card via-primary/5 to-card p-5 sm:p-6 shadow-md">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-                <div className="flex items-start sm:items-center gap-4">
-                  <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0 shadow-lg shadow-amber-400/10">
-                    <Crown className="h-6 w-6 sm:h-7 sm:w-7 stroke-[2.2]" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
-                        Loyalty Rewards
-                      </span>
-                      <Badge className={cn(
-                        "text-[9px] uppercase tracking-wider font-bold px-1.5 py-0 h-4 leading-none",
-                        isGoldMember ? "bg-amber-400 text-black border-amber-300" : "bg-primary/20 text-primary border-primary/30"
-                      )}>
-                        {isGoldMember ? "★ Gold Member" : "Path to Gold"}
-                      </Badge>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-light tracking-tight text-foreground">
-                      {isGoldMember
-                        ? "You've achieved Gold Member status! Enjoy 20% off all salon services."
-                        : `${Math.max(0, 5 - qualifyingVisits.length)} more ${Math.max(0, 5 - qualifyingVisits.length) === 1 ? 'visit' : 'visits'} to achieve Gold Member status & unlock 20% off.`}
-                    </h3>
+            {/* My Rewards Card with Circular Progress Ring */}
+            <MyRewardsCard 
+              totalPoints={qualifyingVisits.length * 100 + (isGoldMember ? 500 : 200)} 
+              currentTierName={isGoldMember ? "Gold Member" : "Silver Member"} 
+              nextTierName={isGoldMember ? null : "Gold Member"} 
+              pointsForNextTier={Math.max(0, 5 - qualifyingVisits.length) * 100} 
+              progressPercentage={Math.min(100, Math.round((qualifyingVisits.length / 5) * 100))} 
+              className="mb-8" 
+            />
 
-                    {/* Progress Bar */}
-                    <div className="mt-2.5 flex items-center gap-3">
-                      <div className="h-2.5 w-44 sm:w-60 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden p-0.5">
-                        <div 
-                          className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 rounded-full shadow-[0_0_8px_rgba(234,179,8,0.4)] transition-all duration-500" 
-                          style={{ width: `${Math.min(100, Math.round((qualifyingVisits.length / 5) * 100))}%` }} 
-                        />
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-primary">
-                        {qualifyingVisits.length}/5 Visits ({Math.min(100, Math.round((qualifyingVisits.length / 5) * 100))}%)
-                      </span>
-                    </div>
+            {/* Upcoming Appointments Quick Widget */}
+            <div className="mb-10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                    <Calendar className="h-4 w-4" />
                   </div>
+                  <h3 className="text-lg font-serif font-bold text-foreground tracking-tight">Upcoming Appointments</h3>
                 </div>
-
-                <div className="flex items-center gap-2.5 w-full md:w-auto self-end md:self-center">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setActiveTab("loyalty")} 
-                    className="border-primary/30 text-primary hover:bg-primary/10 text-xs uppercase tracking-widest h-9 px-4"
-                  >
-                    View All Rewards
-                  </Button>
-                  <Button 
-                    asChild 
-                    size="sm" 
-                    className="bg-primary text-black hover:bg-primary/90 text-xs font-bold uppercase tracking-widest h-9 px-5 shadow-md shadow-primary/20"
-                  >
-                    <Link to="/book">
-                      Book Next Visit <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
+                <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] font-mono font-bold">
+                  {upcomingAppointments.length} Scheduled
+                </Badge>
               </div>
+
+              {upcomingAppointments.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-border bg-card/60 space-y-3">
+                  <p className="text-xs text-muted-foreground">You have no upcoming appointments scheduled.</p>
+                  <Button asChild size="sm" className="bg-primary text-black font-bold uppercase text-[10px] tracking-wider rounded-full">
+                    <Link to="/book">Book New Service</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {upcomingAppointments.map((app) => (
+                    <div key={app.id} className="p-5 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all flex flex-col justify-between shadow-md relative overflow-hidden group">
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[9px] uppercase tracking-wider font-semibold">
+                            {app.service || "Salon Service"}
+                          </Badge>
+                          <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded">
+                            {app.status || "confirmed"}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 my-2">
+                          <div className="flex items-center gap-2 text-xs text-zinc-300">
+                            <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="font-medium text-white">
+                              {app.date ? format(new Date(app.date), "EEE, MMM d, yyyy") : "Date TBA"} at <strong className="text-primary">{app.time || "Time TBA"}</strong>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-zinc-400">
+                            <Scissors className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                            <span>Stylist: <strong className="text-zinc-200">{app.stylist || "Master Stylist"}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 mt-3 border-t border-border/60 flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditClick(app)}
+                          className="h-8 px-3 text-[10px] uppercase font-bold tracking-wider border-border bg-background hover:bg-white/5 text-foreground gap-1"
+                        >
+                          <Edit2 className="h-3 w-3 text-primary" />
+                          Reschedule
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setConfirmAction({ type: 'cancel', id: app.id })}
+                          className="h-8 px-3 text-[10px] uppercase font-bold tracking-wider border-red-500/30 bg-red-950/20 hover:bg-red-950/40 text-red-400 gap-1"
+                        >
+                          <XCircle className="h-3 w-3 text-red-400" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {profile?.role !== 'Owner' && profile?.role !== 'Admin' && !isVendor && (
@@ -850,8 +881,8 @@ export default function Dashboard() {
                         ) : (
                           upcomingAppointments.map((appointment) => {
                             const isHome = appointment.serviceType === 'home';
-                            const depositDue = appointment.advanceRequired || Math.round((appointment.totalAmount || 1500) * 0.25);
-                            const balanceDue = appointment.remainingAmount !== undefined ? appointment.remainingAmount : (appointment.totalAmount ? appointment.totalAmount - (appointment.advanceAmountPaid || 0) : 0);
+                            const depositDue = appointment?.advanceRequired || Math.round((appointment?.totalAmount || 1500) * 0.25);
+                            const balanceDue = appointment?.remainingAmount !== undefined ? appointment.remainingAmount : (appointment?.totalAmount ? appointment.totalAmount - (appointment?.advanceAmountPaid || 0) : 0);
 
                             return (
                               <TableRow key={appointment.id} className="border-border hover:bg-white/5 transition-colors">
@@ -1141,6 +1172,86 @@ export default function Dashboard() {
                 </div>
               </section>
             </div>
+          </TabsContent>
+
+          <TabsContent value="past" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-serif font-bold text-foreground tracking-tight">Past Appointments & History</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Review your completed grooming sessions and re-book with a single click.</p>
+              </div>
+              <Badge className="bg-primary/20 text-primary border-primary/30 text-xs font-mono font-bold">
+                {pastAppointments.length} Completed
+              </Badge>
+            </div>
+
+            {pastAppointments.length === 0 ? (
+              <div className="p-16 text-center rounded-3xl border border-dashed border-border bg-card/60 space-y-3">
+                <Clock className="h-10 w-10 text-muted-foreground mx-auto opacity-40" />
+                <h4 className="text-sm font-bold text-white">No Past Appointments Found</h4>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">You haven't completed any salon visits yet. Once you complete a booking, it will appear here.</p>
+                <Button asChild size="sm" className="bg-primary text-black font-bold uppercase text-[10px] tracking-wider rounded-full mt-2">
+                  <Link to="/book">Book Your First Service</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pastAppointments.map((app) => (
+                  <div key={app.id} className="rounded-3xl border border-border/80 bg-card p-6 shadow-xl relative overflow-hidden flex flex-col justify-between group hover:border-primary/50 transition-all duration-300">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] uppercase tracking-wider font-semibold">
+                          Completed
+                        </Badge>
+                        <span className="text-[11px] font-mono text-zinc-400">
+                          {app.date ? format(new Date(app.date), "MMM d, yyyy") : "Past Date"}
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-serif font-bold text-foreground group-hover:text-primary transition-colors mb-1">
+                        {app.service || "Salon Treatment"}
+                      </h4>
+
+                      <div className="space-y-1.5 text-xs text-muted-foreground my-3">
+                        <div className="flex items-center gap-2">
+                          <Scissors className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>Stylist: <strong className="text-zinc-200">{app.stylist || "Master Stylist"}</strong></span>
+                        </div>
+                        {app.totalAmount && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-primary font-mono font-bold">₹{app.totalAmount}</span>
+                            <span className="text-[10px] text-zinc-500">• Paid & Settled</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-border/60 flex items-center justify-between">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReviewAppointment(app)}
+                        className="text-[10px] uppercase font-bold tracking-wider text-amber-400 hover:text-amber-300 h-8 px-2 gap-1"
+                      >
+                        <Star className="h-3 w-3 fill-amber-400" />
+                        {userReviews[app.id] ? "View Review" : "Leave a Review"}
+                      </Button>
+
+                      <Button
+                        asChild
+                        size="sm"
+                        className="bg-primary text-black hover:bg-primary/90 text-[10px] font-bold uppercase tracking-widest h-9 px-4 rounded-xl shadow gap-1.5"
+                      >
+                        <Link to={`/book?service=${encodeURIComponent(app.service || "")}`}>
+                          <Repeat className="h-3 w-3" />
+                          Re-book
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="shop">
@@ -1626,162 +1737,166 @@ export default function Dashboard() {
               </DialogDescription>
             </DialogHeader>
 
-            {payingDepositAppointment && (
-              <div className="overflow-y-auto p-6 space-y-5 flex-1">
-                {/* Warning Alert */}
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="text-xs text-amber-200">
-                    <span className="font-bold text-amber-300">Important Policy: </span>
-                    Booking remains <span className="underline font-semibold">Pending Deposit</span> and is not confirmed until the 25% advance payment is verified.
-                  </div>
-                </div>
-
-                {/* Appointment Info */}
-                <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-400">Service:</span>
-                    <span className="font-semibold text-white">{payingDepositAppointment.service || "Salon Service"}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-400">Mode:</span>
-                    <Badge variant="outline" className={cn("text-[10px]", payingDepositAppointment.serviceType === 'home' ? "bg-amber-500/10 text-amber-400 border-amber-500/30" : "bg-purple-500/10 text-purple-400 border-purple-500/30")}>
-                      {payingDepositAppointment.serviceType === 'home' ? `🏠 Home Service (${payingDepositAppointment.distanceKm || 0} km)` : "✂️ In-Salon"}
-                    </Badge>
-                  </div>
-                  {payingDepositAppointment.serviceType === 'home' && payingDepositAppointment.deliveryAddress?.fullAddress && (
-                    <div className="flex justify-between items-start pt-1 border-t border-zinc-800/60">
-                      <span className="text-zinc-400">Address:</span>
-                      <span className="text-right text-zinc-200 max-w-[260px]">{payingDepositAppointment.deliveryAddress.fullAddress}</span>
+            {payingDepositAppointment && (() => {
+              const app = payingDepositAppointment;
+              if (!app) return null;
+              return (
+                <div className="overflow-y-auto p-6 space-y-5 flex-1">
+                  {/* Warning Alert */}
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-amber-200">
+                      <span className="font-bold text-amber-300">Important Policy: </span>
+                      Booking remains <span className="underline font-semibold">Pending Deposit</span> and is not confirmed until the 25% advance payment is verified.
                     </div>
-                  )}
-                  {payingDepositAppointment.date && (
-                    <div className="flex justify-between items-center pt-1 border-t border-zinc-800/60">
-                      <span className="text-zinc-400">Schedule:</span>
-                      <span className="font-mono text-zinc-200">{format(new Date(payingDepositAppointment.date), "dd MMM yyyy")} at {payingDepositAppointment.time || "Selected slot"}</span>
+                  </div>
+
+                  {/* Appointment Info */}
+                  <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Service:</span>
+                      <span className="font-semibold text-white">{app.service || "Salon Service"}</span>
                     </div>
-                  )}
-                </div>
-
-                {/* Pricing & 25% Advance Breakdown */}
-                <div className="p-4 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-amber-500/20 space-y-2.5">
-                  <div className="text-xs uppercase tracking-widest text-zinc-400 font-bold mb-1">
-                    Payment Breakdown
-                  </div>
-                  <div className="flex justify-between text-xs text-zinc-300">
-                    <span>Service Subtotal:</span>
-                    <span className="font-mono">₹{payingDepositAppointment.subtotal || 0}</span>
-                  </div>
-                  {(payingDepositAppointment.homeServiceFee || 0) > 0 && (
-                    <div className="flex justify-between text-xs text-amber-300">
-                      <span>Home Service Charge ({payingDepositAppointment.distanceKm || 0} km):</span>
-                      <span className="font-mono">+ ₹{payingDepositAppointment.homeServiceFee}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Mode:</span>
+                      <Badge variant="outline" className={cn("text-[10px]", app.serviceType === 'home' ? "bg-amber-500/10 text-amber-400 border-amber-500/30" : "bg-purple-500/10 text-purple-400 border-purple-500/30")}>
+                        {app.serviceType === 'home' ? `🏠 Home Service (${app.distanceKm || 0} km)` : "✂️ In-Salon"}
+                      </Badge>
                     </div>
-                  )}
-                  <div className="flex justify-between text-xs text-white font-semibold pt-2 border-t border-zinc-800">
-                    <span>Total Amount:</span>
-                    <span className="font-mono">₹{payingDepositAppointment.totalAmount || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-primary font-bold pt-1.5 border-t border-dashed border-primary/30">
-                    <span className="flex items-center gap-1.5">
-                      <ShieldCheck className="h-4 w-4" />
-                      Mandatory 25% Advance Deposit:
-                    </span>
-                    <span className="font-mono text-base">₹{payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-zinc-400">
-                    <span>Remaining Due at Service (75%):</span>
-                    <span className="font-mono">₹{payingDepositAppointment.remainingAmount || Math.round((payingDepositAppointment.totalAmount || 0) * 0.75)}</span>
-                  </div>
-                </div>
-
-                {/* Payment Method Selector */}
-                <div className="space-y-3">
-                  <Label className="text-xs uppercase tracking-widest text-zinc-400 font-bold block">
-                    Choose Deposit Payment Method
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'upi', label: 'UPI / QR', icon: '⚡' },
-                      { id: 'card', label: 'Card', icon: '💳' },
-                      { id: 'netbanking', label: 'NetBanking', icon: '🏦' },
-                    ].map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setDepositPaymentMethod(m.id as any)}
-                        className={cn(
-                          "p-2.5 rounded-xl border text-center transition-all flex flex-col items-center gap-1 text-xs",
-                          depositPaymentMethod === m.id
-                            ? "bg-primary/10 border-primary text-white font-bold"
-                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white"
-                        )}
-                      >
-                        <span className="text-base">{m.icon}</span>
-                        <span>{m.label}</span>
-                      </button>
-                    ))}
+                    {app.serviceType === 'home' && app.deliveryAddress?.fullAddress && (
+                      <div className="flex justify-between items-start pt-1 border-t border-zinc-800/60">
+                        <span className="text-zinc-400">Address:</span>
+                        <span className="text-right text-zinc-200 max-w-[260px]">{app.deliveryAddress.fullAddress}</span>
+                      </div>
+                    )}
+                    {app.date && (
+                      <div className="flex justify-between items-center pt-1 border-t border-zinc-800/60">
+                        <span className="text-zinc-400">Schedule:</span>
+                        <span className="font-mono text-zinc-200">{format(new Date(app.date), "dd MMM yyyy")} at {app.time || "Selected slot"}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {depositPaymentMethod === 'upi' && (
-                    <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-center space-y-2">
-                      <div className="text-[11px] text-zinc-400">UPI ID: <span className="font-mono text-primary font-bold">aurelia.luxe@icici</span></div>
-                      <div className="inline-block p-2 bg-white rounded-lg">
-                        <div className="w-24 h-24 bg-zinc-900 flex items-center justify-center text-white text-[10px] font-mono text-center p-1">
-                          [QR CODE FOR ₹{payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25)}]
+                  {/* Pricing & 25% Advance Breakdown */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-amber-500/20 space-y-2.5">
+                    <div className="text-xs uppercase tracking-widest text-zinc-400 font-bold mb-1">
+                      Payment Breakdown
+                    </div>
+                    <div className="flex justify-between text-xs text-zinc-300">
+                      <span>Service Subtotal:</span>
+                      <span className="font-mono">₹{app.subtotal || 0}</span>
+                    </div>
+                    {(app.homeServiceFee || 0) > 0 && (
+                      <div className="flex justify-between text-xs text-amber-300">
+                        <span>Home Service Charge ({app.distanceKm || 0} km):</span>
+                        <span className="font-mono">+ ₹{app.homeServiceFee}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs text-white font-semibold pt-2 border-t border-zinc-800">
+                      <span>Total Amount:</span>
+                      <span className="font-mono">₹{app.totalAmount || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-primary font-bold pt-1.5 border-t border-dashed border-primary/30">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4" />
+                        Mandatory 25% Advance Deposit:
+                      </span>
+                      <span className="font-mono text-base">₹{app?.advanceRequired || Math.round((app?.totalAmount || 0) * 0.25)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-zinc-400">
+                      <span>Remaining Due at Service (75%):</span>
+                      <span className="font-mono">₹{app.remainingAmount || Math.round((app.totalAmount || 0) * 0.75)}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Method Selector */}
+                  <div className="space-y-3">
+                    <Label className="text-xs uppercase tracking-widest text-zinc-400 font-bold block">
+                      Choose Deposit Payment Method
+                    </Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'upi', label: 'UPI / QR', icon: '⚡' },
+                        { id: 'card', label: 'Card', icon: '💳' },
+                        { id: 'netbanking', label: 'NetBanking', icon: '🏦' },
+                      ].map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setDepositPaymentMethod(m.id as any)}
+                          className={cn(
+                            "p-2.5 rounded-xl border text-center transition-all flex flex-col items-center gap-1 text-xs",
+                            depositPaymentMethod === m.id
+                              ? "bg-primary/10 border-primary text-white font-bold"
+                              : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white"
+                          )}
+                        >
+                          <span className="text-base">{m.icon}</span>
+                          <span>{m.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {depositPaymentMethod === 'upi' && (
+                      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-center space-y-2">
+                        <div className="text-[11px] text-zinc-400">UPI ID: <span className="font-mono text-primary font-bold">aurelia.luxe@icici</span></div>
+                        <div className="inline-block p-2 bg-white rounded-lg">
+                          <div className="w-24 h-24 bg-zinc-900 flex items-center justify-center text-white text-[10px] font-mono text-center p-1">
+                            [QR CODE FOR ₹{app?.advanceRequired || Math.round((app?.totalAmount || 0) * 0.25)}]
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-zinc-500">Scan using GPay, PhonePe, Paytm, or BHIM</div>
+                      </div>
+                    )}
+
+                    {depositPaymentMethod === 'card' && (
+                      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2 text-xs">
+                        <Input placeholder="Card Number (XXXX XXXX XXXX XXXX)" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="4532 8901 2345 6789" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input placeholder="MM/YY" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="12/28" />
+                          <Input placeholder="CVV" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="888" type="password" />
                         </div>
                       </div>
-                      <div className="text-[10px] text-zinc-500">Scan using GPay, PhonePe, Paytm, or BHIM</div>
-                    </div>
-                  )}
-
-                  {depositPaymentMethod === 'card' && (
-                    <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2 text-xs">
-                      <Input placeholder="Card Number (XXXX XXXX XXXX XXXX)" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="4532 8901 2345 6789" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input placeholder="MM/YY" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="12/28" />
-                        <Input placeholder="CVV" className="bg-black border-zinc-800 h-9 text-xs font-mono" defaultValue="888" type="password" />
-                      </div>
-                    </div>
-                  )}
-
-                  {depositPaymentMethod === 'netbanking' && (
-                    <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300">
-                      Popular Banks: HDFC, ICICI, SBI, Axis Bank, Kotak. Instant authorization.
-                    </div>
-                  )}
-                </div>
-
-                <DialogFooter className="pt-4 border-t border-zinc-900 flex sm:justify-between items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setPayingDepositAppointment(null)}
-                    className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white"
-                  >
-                    Pay Later
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleCompleteDepositPayment}
-                    disabled={isProcessingDeposit}
-                    className="bg-primary text-black hover:bg-primary/90 font-bold uppercase tracking-widest text-xs h-11 px-8 rounded-none shadow-lg shadow-primary/20 flex items-center gap-2"
-                  >
-                    {isProcessingDeposit ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-black border-t-transparent animate-spin rounded-full" />
-                        Verifying Deposit...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Verify & Pay ₹{payingDepositAppointment.advanceRequired || Math.round((payingDepositAppointment.totalAmount || 0) * 0.25)}
-                      </>
                     )}
-                  </Button>
-                </DialogFooter>
-              </div>
-            )}
+
+                    {depositPaymentMethod === 'netbanking' && (
+                      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300">
+                        Popular Banks: HDFC, ICICI, SBI, Axis Bank, Kotak. Instant authorization.
+                      </div>
+                    )}
+                  </div>
+
+                  <DialogFooter className="pt-4 border-t border-zinc-900 flex sm:justify-between items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setPayingDepositAppointment(null)}
+                      className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white"
+                    >
+                      Pay Later
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCompleteDepositPayment}
+                      disabled={isProcessingDeposit}
+                      className="bg-primary text-black hover:bg-primary/90 font-bold uppercase tracking-widest text-xs h-11 px-8 rounded-none shadow-lg shadow-primary/20 flex items-center gap-2"
+                    >
+                      {isProcessingDeposit ? (
+                        <>
+                          <div className="h-4 w-4 border-2 border-black border-t-transparent animate-spin rounded-full" />
+                          Verifying Deposit...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Verify & Pay ₹{app?.advanceRequired || Math.round((app?.totalAmount || 0) * 0.25)}
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              );
+            })()}
           </DialogContent>
         </Dialog>
 

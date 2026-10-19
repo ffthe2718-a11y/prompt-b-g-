@@ -848,7 +848,7 @@ export default function ReferralDashboard() {
                   </Badge>
                   <h3 className="text-2xl font-serif text-foreground">How The Referral Program Works</h3>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Reward your circle with Mumbai's most prestigious salon experiences while stacking points for your own self-care.
+                    Reward your circle with Jaipur's most prestigious salon experiences while stacking points for your own self-care.
                   </p>
                 </div>
 

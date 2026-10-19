@@ -59,7 +59,7 @@ export const SEASONAL_PROMOTIONS: SeasonalPromotion[] = [
     terms: [
       "Please book at least 48 hours in advance",
       "Trial session can be scheduled 7 days before wedding date",
-      "Valid at all partner salons in Mumbai",
+      "Valid at all Royal Tresses Jaipur salon branches",
       "Booking amount is 25% Advance Payment"
     ]
   },
@@ -131,7 +131,7 @@ export const SEASONAL_PROMOTIONS: SeasonalPromotion[] = [
     seasonTag: "Anti-Frizz Offer",
     title: "Monsoon Anti-Frizz Keratin Treatment",
     subtitle: "Complete anti-frizz keratin treatment with scalp detox and free home care kit.",
-    description: "Control frizzy hair and protect strands against Mumbai humidity. Formulated with organic amino acids for smooth, shiny hair.",
+    description: "Control frizzy hair and protect strands against dryness and pollution. Formulated with organic amino acids for smooth, shiny hair.",
     originalPrice: 11000,
     discountedPrice: 8200,
     discountPercentage: 25,
