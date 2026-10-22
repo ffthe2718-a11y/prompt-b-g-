@@ -271,143 +271,111 @@ export default function Services({
           </div>
         </div>
 
-        <div className="mt-4">
-          {services.length === 0 ? (
-            <EmptyState
-              icon={<Scissors className="h-5 w-5" />}
-              title="Your menu is empty"
-              description="Add your first service so clients know what they can book. You can group services into categories and reorder them any time."
-              action={
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={openCreate}
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> Add your first service
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setSaving(true);
-                      try {
-                        const mockServices = [
-                          { name: "Haircut & styling", category: "Hair", price: 1500, durationMinutes: 45, description: "A precision cut and finish.", isActive: true },
-                          { name: "Hair colour", category: "Colour", price: 3000, durationMinutes: 120, description: "Full head colour treatment.", isActive: true },
-                          { name: "Facial", category: "Skin", price: 2000, durationMinutes: 60, description: "Refreshing facial treatment.", isActive: true },
-                        ];
-                        for (const service of mockServices) {
-                          await salonApi.createService(service);
-                        }
-                        toast.success("Demo services added.");
-                        await refresh();
-                      } catch (error: any) {
-                        toast.error(error?.message || "Could not load demo services.");
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
-                  >
-                    Load demo services
-                  </button>
-                </div>
-              }
-            />
-          ) : visible.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-[11px] text-muted-foreground">
-              No services match this filter.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {visible.map((service) => {
-                const index = services.findIndex((item) => item.id === service.id);
-                const busy = pendingId === service.id;
-                return (
-                  <div
-                    key={service.id}
-                    className={cn(
-                      "group rounded-xl border border-border bg-background/40 p-3.5 transition-colors hover:border-primary/30",
-                      !service.isActive && "opacity-60"
-                    )}
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[12px] font-semibold text-foreground">{service.name}</p>
-                          {service.category && (
-                            <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[7px] font-bold uppercase tracking-[0.12em] text-primary">
-                              {service.category}
-                            </span>
-                          )}
-                          {!service.isActive && (
-                            <span className="rounded-full border border-border px-2 py-0.5 text-[7px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                              Hidden
-                            </span>
-                          )}
-                        </div>
-                        {service.description && (
-                          <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">
-                            {service.description}
-                          </p>
+        {services.length > 0 && (
+          <div className="mt-4">
+            {Object.entries(
+              visible.reduce((acc, s) => {
+                const c = s.category || "Uncategorised";
+                if (!acc[c]) acc[c] = [];
+                acc[c].push(s);
+                return acc;
+              }, {} as Record<string, Service[]>)
+            ).map(([category, catServices]) => (
+              <div key={category} className="mb-6">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground mb-3">{category}</h3>
+                <div className="space-y-2">
+                  {catServices.map((service) => {
+                    const index = services.findIndex((item) => item.id === service.id);
+                    const busy = pendingId === service.id;
+                    return (
+                      <div
+                        key={service.id}
+                        className={cn(
+                          "group rounded-xl border border-border bg-background/40 p-3.5 transition-colors hover:border-primary/30 hover:shadow-md",
+                          !service.isActive && "opacity-60"
                         )}
-                        <div className="mt-1.5 flex items-center gap-3 text-[9px] text-muted-foreground">
-                          <span className="font-medium text-foreground">{formatPrice(service.price, salon.currency)}</span>
-                          {service.durationMinutes > 0 && (
-                            <span className="inline-flex items-center gap-1">
-                              <Clock3 className="h-2.5 w-2.5" /> {formatDuration(service.durationMinutes)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-[12px] font-semibold text-foreground">{service.name}</p>
+                              {service.category && (
+                                <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[7px] font-bold uppercase tracking-[0.12em] text-primary">
+                                  {service.category}
+                                </span>
+                              )}
+                              {!service.isActive && (
+                                <span className="rounded-full border border-border px-2 py-0.5 text-[7px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                                  Hidden
+                                </span>
+                              )}
+                            </div>
+                            {service.description && (
+                              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">
+                                {service.description}
+                              </p>
+                            )}
+                            <div className="mt-1.5 flex items-center gap-3 text-[9px] text-muted-foreground">
+                              <span className="font-medium text-foreground">{formatPrice(service.price, salon.currency)}</span>
+                              {service.durationMinutes > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock3 className="h-2.5 w-2.5" /> {formatDuration(service.durationMinutes)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                      <div className="flex items-center gap-1.5 self-end sm:self-start">
-                        <div className="mr-1 flex items-center gap-1.5">
-                          <span className="text-[8px] uppercase tracking-[0.12em] text-muted-foreground">Bookable</span>
-                          <Switch
-                            aria-label={`${service.name} bookable online`}
-                            checked={service.isActive}
-                            disabled={busy}
-                            onCheckedChange={(checked) => void toggleActive(service, Boolean(checked))}
-                            size="sm"
-                          />
+                          <div className="flex items-center gap-1.5 self-end sm:self-start">
+                            <div className="mr-1 flex items-center gap-1.5">
+                              <span className="text-[8px] uppercase tracking-[0.12em] text-muted-foreground">Bookable</span>
+                              <Switch
+                                aria-label={`${service.name} bookable online`}
+                                checked={service.isActive}
+                                disabled={busy}
+                                onCheckedChange={(checked) => void toggleActive(service, Boolean(checked))}
+                                size="sm"
+                              />
+                            </div>
+                            <button
+                              onClick={() => void move(index, -1)}
+                              disabled={index === 0 || busy}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-primary disabled:opacity-25"
+                              aria-label={`Move ${service.name} up`}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => void move(index, 1)}
+                              disabled={index === services.length - 1 || busy}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-primary disabled:opacity-25"
+                              aria-label={`Move ${service.name} down`}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => openEdit(service)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                              aria-label={`Edit ${service.name}`}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => setDeleting(service)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-red-500/40 hover:text-red-400"
+                              aria-label={`Delete ${service.name}`}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => void move(index, -1)}
-                          disabled={index === 0 || busy}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-primary disabled:opacity-25"
-                          aria-label={`Move ${service.name} up`}
-                        >
-                          <ArrowUp className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => void move(index, 1)}
-                          disabled={index === services.length - 1 || busy}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-primary disabled:opacity-25"
-                          aria-label={`Move ${service.name} down`}
-                        >
-                          <ArrowDown className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => openEdit(service)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-                          aria-label={`Edit ${service.name}`}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => setDeleting(service)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-red-500/40 hover:text-red-400"
-                          aria-label={`Delete ${service.name}`}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {services.length === 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
