@@ -230,6 +230,7 @@ export const salonApi = {
   async createService(payload: {
     name: string;
     description?: string;
+    imageUrl?: string;
     category?: string;
     price: number;
     durationMinutes?: number;
@@ -549,6 +550,7 @@ export type SalonUpdatePayload = Partial<
     | "description"
     | "logoUrl"
     | "heroImageUrl"
+    | "backgroundImageUrl"
     | "aboutImageUrl"
     | "heroTitle"
     | "heroSubtitle"

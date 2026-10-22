@@ -591,7 +591,14 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
 
       {heroEnabled && (
         <section className="relative flex min-h-[560px] items-center justify-center overflow-hidden sm:min-h-[660px]">
-          {hasHeroImage ? (
+          {salon.backgroundImageUrl ? (
+            <img
+              src={salon.backgroundImageUrl}
+              alt="Site background"
+              className="absolute inset-0 h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : hasHeroImage ? (
             <img
               src={salon.heroImageUrl}
               alt={`${salon.name} salon`}

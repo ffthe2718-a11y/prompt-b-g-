@@ -28,6 +28,7 @@ export interface Service {
   id: string;
   name: string;
   description: string;
+  imageUrl?: string;
   category: string;
   price: number;
   priceCents: number;
@@ -104,6 +105,7 @@ export interface Salon {
   description: string;
   logoUrl: string;
   heroImageUrl: string;
+  backgroundImageUrl: string;
   aboutImageUrl: string;
   heroTitle: string;
   heroSubtitle: string;

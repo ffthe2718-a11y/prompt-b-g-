@@ -273,8 +273,8 @@ export default function WebsiteEditor({
                   className="relative flex min-h-[260px] flex-col justify-end p-4"
                   style={{ background: TEMPLATE_PRESETS[form.template]?.gradient }}
                 >
-                  {form.heroImageUrl && (
-                    <img src={form.heroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" referrerPolicy="no-referrer" />
+                  {(form.backgroundImageUrl || form.heroImageUrl) && (
+                    <img src={form.backgroundImageUrl || form.heroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" referrerPolicy="no-referrer" />
                   )}
                   <div className="relative">
                     <p className="text-[7px] font-bold uppercase tracking-[0.2em]" style={{ color: TEMPLATE_PRESETS[form.template]?.primary }}>
@@ -426,6 +426,16 @@ export default function WebsiteEditor({
                 aspect="aspect-square"
                 rounded="2xl"
                 description="Your best salon or styling photo."
+              />
+            </Panel>
+            <Panel>
+              <ImageField
+                label="Background image"
+                value={form.backgroundImageUrl}
+                onChange={(url) => update("backgroundImageUrl", url)}
+                aspect="aspect-square"
+                rounded="2xl"
+                description="Main background image for the site."
               />
             </Panel>
             <Panel>

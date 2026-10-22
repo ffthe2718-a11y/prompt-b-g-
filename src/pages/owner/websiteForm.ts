@@ -8,6 +8,7 @@ export interface SiteForm {
   description: string;
   logoUrl: string;
   heroImageUrl: string;
+  backgroundImageUrl: string;
   aboutImageUrl: string;
   heroTitle: string;
   heroSubtitle: string;
@@ -47,6 +48,7 @@ export function siteFormFromSalon(salon: Salon): SiteForm {
     description: salon.description,
     logoUrl: salon.logoUrl,
     heroImageUrl: salon.heroImageUrl,
+    backgroundImageUrl: salon.backgroundImageUrl,
     aboutImageUrl: salon.aboutImageUrl,
     heroTitle: salon.heroTitle,
     heroSubtitle: salon.heroSubtitle,
@@ -87,6 +89,7 @@ export function siteFormToPatch(form: SiteForm): SalonUpdatePayload & { sections
     description: form.description,
     logoUrl: form.logoUrl,
     heroImageUrl: form.heroImageUrl,
+    backgroundImageUrl: form.backgroundImageUrl,
     aboutImageUrl: form.aboutImageUrl,
     heroTitle: form.heroTitle,
     heroSubtitle: form.heroSubtitle,

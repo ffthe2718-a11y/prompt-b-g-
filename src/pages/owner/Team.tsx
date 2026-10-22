@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { Salon, StaffMember } from "@/types/salon";
 import { salonApi } from "@/lib/api";
 import { initials } from "@/lib/salonUi";
@@ -26,6 +26,7 @@ type StaffDraft = {
   specialties: string;
   experienceYears: string;
   isActive: boolean;
+  bioManuallyEdited: boolean;
 };
 
 const blankDraft: StaffDraft = {
@@ -36,6 +37,7 @@ const blankDraft: StaffDraft = {
   specialties: "",
   experienceYears: "",
   isActive: true,
+  bioManuallyEdited: false,
 };
 
 export default function Team({ salon, refresh }: { salon: Salon; refresh: () => Promise<void> }) {
@@ -49,11 +51,50 @@ export default function Team({ salon, refresh }: { salon: Salon; refresh: () => 
 
   const staff = useMemo(() => [...salon.staff].sort((a, b) => a.sortOrder - b.sortOrder), [salon.staff]);
 
+  useEffect(() => {
+    if (staff.length === 0 && !saving) {
+      (async () => {
+        setSaving(true);
+        try {
+          const mockStaff = [
+            { name: "Anaya Sharma", role: "Senior Stylist", bio: "Passionate about precision cuts.", imageUrl: "", specialties: ["Haircut", "Styling"], experienceYears: 10, isActive: true },
+            { name: "Rahul Verma", role: "Colourist", bio: "Expert in vibrant hair colours.", imageUrl: "", specialties: ["Balayage", "Colour"], experienceYears: 8, isActive: true },
+            { name: "Priya Singh", role: "Spa Therapist", bio: "Relaxation and skincare specialist.", imageUrl: "", specialties: ["Facial", "Massage"], experienceYears: 5, isActive: true },
+          ];
+          for (const member of mockStaff) {
+            await salonApi.createStaff(member);
+          }
+          await refresh();
+        } catch (error: any) {
+          console.error("Could not load demo team.", error);
+        } finally {
+          setSaving(false);
+        }
+      })();
+    }
+  }, [staff.length, refresh]);
+
   const openCreate = () => {
     setEditing(null);
     setDraft(blankDraft);
     setOpen(true);
   };
+
+  // Add auto-bio generation
+  const generateBio = (d: StaffDraft) => {
+    if (!d.name && !d.role && !d.specialties && !d.experienceYears) return "";
+    return `${d.experienceYears || "X"} years of expertise in ${d.specialties || "[Specialties]"}, specializing as a ${d.role || "[Role]"}, delivering top-notch professional care...`;
+  };
+
+  // Effect to update bio if not manually edited
+  useEffect(() => {
+    if (!draft.bioManuallyEdited) {
+      const newBio = generateBio(draft);
+      if (newBio !== draft.bio) {
+        setDraft((prev) => ({ ...prev, bio: newBio }));
+      }
+    }
+  }, [draft.name, draft.role, draft.specialties, draft.experienceYears]);
 
   const openEdit = (member: StaffMember) => {
     setEditing(member);
@@ -65,6 +106,7 @@ export default function Team({ salon, refresh }: { salon: Salon; refresh: () => 
       specialties: member.specialties.join(", "),
       experienceYears: member.experienceYears ? String(member.experienceYears) : "",
       isActive: member.isActive,
+      bioManuallyEdited: true, // Assuming existing bio is manually set
     });
     setOpen(true);
   };
@@ -179,12 +221,38 @@ export default function Team({ salon, refresh }: { salon: Salon; refresh: () => 
           title="Add the people who make it happen"
           description="Clients love booking with a specific stylist. Add your team so they can choose who looks after them — or hide a member while they are away."
           action={
-            <button
-              onClick={openCreate}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black"
-            >
-              <Plus className="h-3.5 w-3.5" /> Add team member
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={openCreate}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add team member
+              </button>
+              <button
+                onClick={async () => {
+                  setSaving(true);
+                  try {
+                    const mockStaff = [
+                      { name: "Anaya Sharma", role: "Senior Stylist", bio: "Passionate about precision cuts.", imageUrl: "", specialties: ["Haircut", "Styling"], experienceYears: 10, isActive: true },
+                      { name: "Rahul Verma", role: "Colourist", bio: "Expert in vibrant hair colours.", imageUrl: "", specialties: ["Balayage", "Colour"], experienceYears: 8, isActive: true },
+                      { name: "Priya Singh", role: "Spa Therapist", bio: "Relaxation and skincare specialist.", imageUrl: "", specialties: ["Facial", "Massage"], experienceYears: 5, isActive: true },
+                    ];
+                    for (const member of mockStaff) {
+                      await salonApi.createStaff(member);
+                    }
+                    toast.success("Demo team members added.");
+                    await refresh();
+                  } catch (error: any) {
+                    toast.error(error?.message || "Could not load demo team.");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+              >
+                Load demo team
+              </button>
+            </div>
           }
         />
       ) : (
@@ -355,7 +423,7 @@ export default function Team({ salon, refresh }: { salon: Salon; refresh: () => 
             <Field label="Short bio">
               <textarea
                 value={draft.bio}
-                onChange={(event) => setDraft({ ...draft, bio: event.target.value })}
+                onChange={(event) => setDraft({ ...draft, bio: event.target.value, bioManuallyEdited: true })}
                 placeholder="Ten years of colour work, a calm chair, and a genuine love for helping you feel like yourself."
                 className={cn(textareaClass, "min-h-20")}
               />

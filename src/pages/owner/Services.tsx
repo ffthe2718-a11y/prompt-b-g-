@@ -33,6 +33,7 @@ type ServiceDraft = {
   price: string;
   durationMinutes: string;
   description: string;
+  imageUrl: string;
   isActive: boolean;
 };
 
@@ -42,6 +43,7 @@ const blankDraft: ServiceDraft = {
   price: "",
   durationMinutes: "45",
   description: "",
+  imageUrl: "",
   isActive: true,
 };
 
@@ -68,6 +70,30 @@ export default function Services({
     () => [...salon.services].sort((a, b) => a.sortOrder - b.sortOrder),
     [salon.services]
   );
+
+  useEffect(() => {
+    if (services.length === 0 && !saving) {
+      (async () => {
+        setSaving(true);
+        try {
+          const mockServices = [
+            { name: "Haircut & styling", category: "Hair", price: 1500, durationMinutes: 45, description: "A precision cut and finish.", isActive: true },
+            { name: "Hair colour", category: "Colour", price: 3000, durationMinutes: 120, description: "Full head colour treatment.", isActive: true },
+            { name: "Facial", category: "Skin", price: 2000, durationMinutes: 60, description: "Refreshing facial treatment.", isActive: true },
+          ];
+          for (const service of mockServices) {
+            await salonApi.createService(service);
+          }
+          await refresh();
+        } catch (error: any) {
+          console.error("Could not load demo services.", error);
+        } finally {
+          setSaving(false);
+        }
+      })();
+    }
+  }, [services.length, refresh]);
+
   const categories = useMemo(() => {
     const set = new Set(services.map((service) => service.category || "Uncategorised"));
     return ["all", ...Array.from(set)];
@@ -100,6 +126,7 @@ export default function Services({
       price: String(service.price),
       durationMinutes: String(service.durationMinutes || 45),
       description: service.description,
+      imageUrl: service.imageUrl || "",
       isActive: service.isActive,
     });
     setOpen(true);
@@ -121,6 +148,7 @@ export default function Services({
       price,
       durationMinutes: Math.max(0, Number(draft.durationMinutes) || 0),
       description: draft.description.trim(),
+      imageUrl: draft.imageUrl.trim(),
       isActive: draft.isActive,
     };
     setSaving(true);
@@ -250,12 +278,38 @@ export default function Services({
               title="Your menu is empty"
               description="Add your first service so clients know what they can book. You can group services into categories and reorder them any time."
               action={
-                <button
-                  onClick={openCreate}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Add your first service
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={openCreate}
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add your first service
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        const mockServices = [
+                          { name: "Haircut & styling", category: "Hair", price: 1500, durationMinutes: 45, description: "A precision cut and finish.", isActive: true },
+                          { name: "Hair colour", category: "Colour", price: 3000, durationMinutes: 120, description: "Full head colour treatment.", isActive: true },
+                          { name: "Facial", category: "Skin", price: 2000, durationMinutes: 60, description: "Refreshing facial treatment.", isActive: true },
+                        ];
+                        for (const service of mockServices) {
+                          await salonApi.createService(service);
+                        }
+                        toast.success("Demo services added.");
+                        await refresh();
+                      } catch (error: any) {
+                        toast.error(error?.message || "Could not load demo services.");
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+                  >
+                    Load demo services
+                  </button>
+                </div>
               }
             />
           ) : visible.length === 0 ? (
@@ -404,6 +458,13 @@ export default function Services({
               autoFocus
             />
           </Field>
+          <ImageField
+            label="Service image"
+            value={draft.imageUrl}
+            onChange={(url) => setDraft({ ...draft, imageUrl: url })}
+            aspect="aspect-square"
+            rounded="xl"
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Category" hint="Optional. Groups services on your site.">
               <input

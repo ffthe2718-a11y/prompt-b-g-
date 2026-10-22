@@ -94,14 +94,21 @@ export default function BookingSection({
     price: number;
   } | null>(null);
 
-  const activeStaff = useMemo(() => salon.staff.filter((member) => member.isActive), [salon.staff]);
-  const service = salon.services.find((item) => item.id === serviceId) ?? null;
+  const activeStaff = useMemo(() => salon?.staff?.filter((member) => member.isActive) ?? [], [salon?.staff]);
+  const service = salon?.services?.find((item) => item.id === serviceId) ?? null;
+  const bookingSettings = salon?.bookingSettings ?? {
+    enabled: false,
+    slotIntervalMinutes: 30,
+    minNoticeHours: 24,
+    maxAdvanceDays: 30,
+    requireEmail: true,
+  };
 
   const maxDate = useMemo(() => {
     const max = new Date();
-    max.setDate(max.getDate() + (salon.bookingSettings.maxAdvanceDays || 60));
+    max.setDate(max.getDate() + (bookingSettings.maxAdvanceDays || 60));
     return localDate(max);
-  }, [salon.bookingSettings.maxAdvanceDays]);
+  }, [bookingSettings.maxAdvanceDays]);
 
   useEffect(() => {
     setTime("");
@@ -218,7 +225,7 @@ export default function BookingSection({
   const inputClass =
     "h-11 w-full rounded-xl border border-[color:var(--site-border)] bg-[var(--site-surface)] px-3.5 text-sm text-[color:var(--site-ink)] outline-none transition-colors placeholder:text-[color:var(--site-muted)] focus:border-[color:var(--site-accent)]";
 
-  if (!salon.bookingSettings.enabled) {
+  if (!bookingSettings.enabled) {
     return (
       <section id="booking" className="border-t border-[color:var(--site-border)] bg-[var(--site-surface)] py-20">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-8">
@@ -498,7 +505,7 @@ export default function BookingSection({
                   <input
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder={salon.bookingSettings.requireEmail ? "Email address" : "Email (optional)"}
+                    placeholder={bookingSettings.requireEmail ? "Email address" : "Email (optional)"}
                     autoComplete="email"
                     type="email"
                     className={inputClass}
