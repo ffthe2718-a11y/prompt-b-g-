@@ -12,6 +12,7 @@ import {
   CalendarDays,
   Check,
   ExternalLink,
+  Gift,
   Globe2,
   Images,
   LayoutDashboard,
@@ -37,6 +38,7 @@ import Gallery from "@/pages/owner/Gallery";
 import Bookings from "@/pages/owner/Bookings";
 import Reviews from "@/pages/owner/Reviews";
 import AnalyticsView from "@/pages/owner/Analytics";
+import GiftCards from "@/pages/owner/GiftCards";
 import Settings from "@/pages/owner/Settings";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +50,7 @@ const SECTIONS = [
   { id: "gallery", label: "Gallery", icon: Images },
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "reviews", label: "Reviews", icon: Star },
+  { id: "gift-cards", label: "Gift Cards", icon: Gift },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings2 },
 ] as const;
@@ -62,8 +65,9 @@ const SECTION_COPY: Record<SectionId, { title: string; subtitle: string }> = {
   gallery: { title: "Gallery", subtitle: "Photographs of your work and your space." },
   bookings: { title: "Bookings", subtitle: "Appointment requests from your website." },
   reviews: { title: "Reviews", subtitle: "What clients are saying, and your replies." },
+  "gift-cards": { title: "Gift Cards", subtitle: "Define denominations, card styling and issue digital vouchers." },
   analytics: { title: "Analytics", subtitle: "How your website is performing." },
-  settings: { title: "Settings", subtitle: "Account, address and plan." },
+  settings: { title: "Settings", subtitle: "Account, address, business hours and plan." },
 };
 
 export default function OwnerDashboard() {
@@ -505,6 +509,7 @@ export default function OwnerDashboard() {
           {active === "gallery" && <Gallery salon={salon} refresh={refresh} />}
           {active === "bookings" && <Bookings salon={salon} bookings={bookings} refresh={refresh} />}
           {active === "reviews" && <Reviews salon={salon} refresh={refresh} />}
+          {active === "gift-cards" && <GiftCards salon={salon} refresh={refresh} />}
           {active === "analytics" && <AnalyticsView salon={salon} analytics={analytics} />}
           {active === "settings" && (
             <Settings salon={salon} refresh={refreshIdentity} onPublish={publish} publishing={publishing} />

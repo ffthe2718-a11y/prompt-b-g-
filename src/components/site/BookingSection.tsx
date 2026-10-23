@@ -74,6 +74,7 @@ export default function BookingSection({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   // Availability can fail independently of the form (offline, 5xx, rate limit).
@@ -124,7 +125,7 @@ export default function BookingSection({
     setAvailability(null);
     setSlotsError("");
     publicApi
-      .availability(salon.slug, date, serviceId || undefined, staffId || undefined)
+      .availability(salon.slug, date, serviceId || undefined, staffId || undefined, selectedAddonIds)
       .then((result) => {
         if (cancelled) return;
         setAvailability(result);
@@ -144,7 +145,7 @@ export default function BookingSection({
     return () => {
       cancelled = true;
     };
-  }, [date, serviceId, staffId, salon.slug, preview, reloadToken]);
+  }, [date, serviceId, staffId, selectedAddonIds, salon.slug, preview, reloadToken]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -193,6 +194,7 @@ export default function BookingSection({
         date,
         time,
         notes: notes.trim() || undefined,
+        addonIds: selectedAddonIds,
       });
       setSuccess({
         reference: result.booking.reference,
@@ -382,6 +384,60 @@ export default function BookingSection({
                     );
                   })}
                 </div>
+
+                {salon.addons && salon.addons.filter((a) => a.isActive).length > 0 && (
+                  <div className="mt-5 border-t pt-4" style={{ borderColor: theme.border }}>
+                    <label className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: theme.muted }}>
+                      Optional Add-ons
+                    </label>
+                    <div className="mt-2.5 space-y-2">
+                      {salon.addons
+                        .filter((a) => a.isActive)
+                        .map((addon) => {
+                          const isChecked = selectedAddonIds.includes(addon.id);
+                          return (
+                            <label
+                              key={addon.id}
+                              className="flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all"
+                              style={{
+                                borderColor: isChecked ? theme.accent : theme.border,
+                                backgroundColor: isChecked ? theme.accentSoft : "transparent",
+                              }}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedAddonIds([...selectedAddonIds, addon.id]);
+                                    } else {
+                                      setSelectedAddonIds(selectedAddonIds.filter((id) => id !== addon.id));
+                                    }
+                                  }}
+                                  className="h-4 w-4 rounded border-border accent-[var(--site-accent)]"
+                                />
+                                <div>
+                                  <p className="text-xs font-medium" style={{ color: theme.ink }}>{addon.name}</p>
+                                  {addon.description && (
+                                    <p className="text-[9px]" style={{ color: theme.muted }}>{addon.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs font-semibold" style={{ color: theme.ink }}>
+                                  {addon.price > 0 ? formatPrice(addon.price, salon.currency) : "Free"}
+                                </span>
+                                {addon.durationMinutes > 0 && (
+                                  <p className="text-[8px]" style={{ color: theme.muted }}>+{addon.durationMinutes}m</p>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
 
                 {activeStaff.length > 0 && (
                   <div className="mt-5">

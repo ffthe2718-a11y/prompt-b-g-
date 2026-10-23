@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
-import type { Salon } from "@/types/salon";
+import type { DayHours, Salon } from "@/types/salon";
 import { authApi, salonApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { slugify } from "@/lib/salonUi";
+import { DEFAULT_HOURS, WEEKDAYS, formatTime12, getSalonOpenStatus, slugify } from "@/lib/salonUi";
 import { toast } from "sonner";
 import {
+  ArrowRight,
   AtSign,
   BadgeCheck,
   Check,
+  CheckCircle2,
+  Clock,
+  Copy,
   CreditCard,
   Globe2,
   KeyRound,
   Loader2,
   Lock,
+  RotateCcw,
   Sparkles,
   UserRound,
 } from "lucide-react";
@@ -24,6 +29,7 @@ import {
   StatusBadge,
   inputClass,
 } from "@/components/dashboard/ui";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export const PLAN_DETAILS = {
@@ -81,6 +87,11 @@ export default function Settings({
   const [slugReason, setSlugReason] = useState("");
   const [slugSaving, setSlugSaving] = useState(false);
 
+  const [hours, setHours] = useState<DayHours[]>(() =>
+    salon.hours && salon.hours.length > 0 ? salon.hours.map((h) => ({ ...h })) : DEFAULT_HOURS
+  );
+  const [hoursSaving, setHoursSaving] = useState(false);
+
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
 
@@ -88,6 +99,98 @@ export default function Settings({
     setSlug(salon.slug);
     setSlugState("idle");
   }, [salon.slug]);
+
+  useEffect(() => {
+    if (salon.hours && salon.hours.length > 0) {
+      setHours(salon.hours.map((h) => ({ ...h })));
+    }
+  }, [salon.hours]);
+
+  const savedHoursJson = JSON.stringify(salon.hours && salon.hours.length > 0 ? salon.hours : DEFAULT_HOURS);
+  const hoursDirty = JSON.stringify(hours) !== savedHoursJson;
+
+  const updateHour = (index: number, patch: Partial<DayHours>) => {
+    setHours((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  };
+
+  const copyMondayToWeekdays = () => {
+    const monday = hours.find((h) => h.day === "Monday") || hours[0];
+    if (!monday) return;
+    setHours((prev) =>
+      prev.map((h) => {
+        if (["Tuesday", "Wednesday", "Thursday", "Friday"].includes(h.day)) {
+          return { ...h, open: monday.open, close: monday.close, closed: monday.closed };
+        }
+        return h;
+      })
+    );
+    toast.success("Applied Monday hours to all weekdays (Tue–Fri).");
+  };
+
+  const applyPreset = (preset: "standard" | "sevenDays" | "weekdaysOnly") => {
+    if (preset === "standard") {
+      setHours([
+        { day: "Monday", closed: false, open: "10:00", close: "20:00" },
+        { day: "Tuesday", closed: false, open: "10:00", close: "20:00" },
+        { day: "Wednesday", closed: false, open: "10:00", close: "20:00" },
+        { day: "Thursday", closed: false, open: "10:00", close: "20:00" },
+        { day: "Friday", closed: false, open: "10:00", close: "20:00" },
+        { day: "Saturday", closed: false, open: "10:00", close: "20:00" },
+        { day: "Sunday", closed: true, open: "10:00", close: "18:00" },
+      ]);
+      toast.success("Applied standard salon hours (10:00 AM – 8:00 PM, Sunday closed).");
+    } else if (preset === "sevenDays") {
+      setHours(
+        WEEKDAYS.map((day) => ({
+          day,
+          closed: false,
+          open: "10:00",
+          close: "20:00",
+        }))
+      );
+      toast.success("Set open all 7 days (10:00 AM – 8:00 PM).");
+    } else if (preset === "weekdaysOnly") {
+      setHours(
+        WEEKDAYS.map((day) => ({
+          day,
+          closed: day === "Saturday" || day === "Sunday",
+          open: "09:00",
+          close: "19:00",
+        }))
+      );
+      toast.success("Applied Monday to Friday only (Weekends closed).");
+    }
+  };
+
+  const resetHours = () => {
+    if (salon.hours && salon.hours.length > 0) {
+      setHours(salon.hours.map((h) => ({ ...h })));
+    } else {
+      setHours(DEFAULT_HOURS);
+    }
+    toast.info("Reset business hours to current saved schedule.");
+  };
+
+  const saveHours = async () => {
+    setHoursSaving(true);
+    try {
+      await salonApi.update({ hours });
+      await refresh();
+      toast.success("Business hours saved and updated on your website footer.");
+    } catch (error: any) {
+      toast.error(error?.message || "Could not save business hours.");
+    } finally {
+      setHoursSaving(false);
+    }
+  };
+
+  const currentOpenStatus = getSalonOpenStatus(hours);
+  const todayDayName = currentOpenStatus.today || new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
+  const openDaysCount = hours.filter((h) => !h.closed).length;
 
   const siteUrl = typeof window !== "undefined" ? `${window.location.origin}/${salon.slug}` : `/${salon.slug}`;
 
@@ -304,6 +407,216 @@ export default function Settings({
             {slugState === "invalid" && "That address cannot be used."}
           </span>
           <span className="ml-auto font-mono text-[9px] text-muted-foreground/70">{siteUrl}</span>
+        </div>
+      </Panel>
+
+      <Panel>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <SectionHeading
+            title="Business hours"
+            description="Set your daily opening and closing schedule. Times are automatically published to your public website footer and control bookable appointment slots."
+          />
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold tracking-wide",
+                currentOpenStatus.isOpen
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-muted/50 text-muted-foreground border border-border"
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", currentOpenStatus.isOpen ? "bg-emerald-500" : "bg-muted-foreground")} />
+              {currentOpenStatus.text}
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Presets Bar */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
+          <span className="text-[10px] font-medium text-muted-foreground">Quick schedule presets:</span>
+          <button
+            type="button"
+            onClick={() => applyPreset("standard")}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-[10px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/5"
+          >
+            Standard (Mon–Sat 10–8)
+          </button>
+          <button
+            type="button"
+            onClick={() => copyMondayToWeekdays()}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-[10px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/5"
+          >
+            <Copy className="h-3 w-3 text-muted-foreground" /> Copy Mon to Weekdays
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("sevenDays")}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-[10px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/5"
+          >
+            Open 7 Days
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("weekdaysOnly")}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-[10px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/5"
+          >
+            Mon–Fri Only
+          </button>
+          {hoursDirty && (
+            <button
+              type="button"
+              onClick={resetHours}
+              className="ml-auto inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" /> Reset
+            </button>
+          )}
+        </div>
+
+        {/* Schedule Rows */}
+        <div className="mt-4 space-y-2">
+          {hours.map((hour, index) => {
+            const isToday = hour.day.toLowerCase() === todayDayName.toLowerCase();
+            return (
+              <div
+                key={hour.day}
+                className={cn(
+                  "flex flex-col gap-2 rounded-xl border p-3 transition-colors sm:flex-row sm:items-center sm:justify-between",
+                  isToday ? "border-primary/40 bg-primary/[0.03]" : "border-border bg-background/50",
+                  hour.closed && "opacity-75"
+                )}
+              >
+                {/* Day label */}
+                <div className="flex items-center gap-2 sm:w-36">
+                  <span className="text-xs font-semibold text-foreground">{hour.day}</span>
+                  {isToday && (
+                    <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-primary">
+                      Today
+                    </span>
+                  )}
+                </div>
+
+                {/* Open / Closed Toggle Switch */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={!hour.closed}
+                      onCheckedChange={(checked) => updateHour(index, { closed: !checked })}
+                      size="sm"
+                    />
+                    <span
+                      className={cn(
+                        "text-[10px] font-medium",
+                        !hour.closed ? "text-emerald-400 font-semibold" : "text-muted-foreground"
+                      )}
+                    >
+                      {!hour.closed ? "Open" : "Closed"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Time selection or Closed banner */}
+                <div className="flex flex-1 items-center justify-start sm:justify-end gap-2">
+                  {!hour.closed ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[9px] text-muted-foreground uppercase tracking-wider">Open</label>
+                        <input
+                          type="time"
+                          value={hour.open}
+                          onChange={(e) => updateHour(index, { open: e.target.value })}
+                          className={cn(inputClass, "h-8 w-28 text-xs font-mono")}
+                        />
+                      </div>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[9px] text-muted-foreground uppercase tracking-wider">Close</label>
+                        <input
+                          type="time"
+                          value={hour.close}
+                          onChange={(e) => updateHour(index, { close: e.target.value })}
+                          className={cn(inputClass, "h-8 w-28 text-xs font-mono")}
+                        />
+                      </div>
+                      <span className="hidden md:inline-block text-[10px] text-muted-foreground/80 pl-2">
+                        ({formatTime12(hour.open)} – {formatTime12(hour.close)})
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] italic text-muted-foreground py-1">
+                      Salon is closed all day
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Live Website Footer Preview Mini-card */}
+        <div className="mt-5 rounded-xl border border-border/80 bg-muted/20 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-primary" /> Website Footer Schedule Preview
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Here is exactly how your opening hours will be displayed to clients in your website footer.
+              </p>
+            </div>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {openDaysCount} of 7 days open
+            </span>
+          </div>
+
+          <div className="mt-3 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4 rounded-lg border border-border/60 bg-background/60 p-3">
+            {hours.map((hour) => {
+              const isToday = hour.day.toLowerCase() === todayDayName.toLowerCase();
+              return (
+                <div
+                  key={hour.day}
+                  className={cn(
+                    "flex items-center justify-between gap-2 px-2 py-1 rounded text-[10px]",
+                    isToday ? "bg-primary/10 font-medium" : ""
+                  )}
+                >
+                  <span className={cn(isToday ? "text-primary font-bold" : "text-muted-foreground")}>
+                    {hour.day.slice(0, 3)} {isToday && "•"}
+                  </span>
+                  <span className={cn(hour.closed ? "text-muted-foreground/60 italic" : "text-foreground font-medium")}>
+                    {hour.closed ? "Closed" : `${formatTime12(hour.open)} – ${formatTime12(hour.close)}`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Action Row */}
+        <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+          <p className="text-[10px] text-muted-foreground">
+            {hoursDirty ? (
+              <span className="text-amber-400 font-medium">● Unsaved business hours changes</span>
+            ) : (
+              <span className="text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Hours synced with website footer & booking
+              </span>
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            {hoursDirty && (
+              <button
+                type="button"
+                onClick={resetHours}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+            )}
+            <SavingButton saving={hoursSaving} onClick={() => void saveHours()} disabled={!hoursDirty}>
+              Save business hours
+            </SavingButton>
+          </div>
         </div>
       </Panel>
 

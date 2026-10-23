@@ -128,7 +128,7 @@ export function requireSalonOwner(userId: string) {
   return salon;
 }
 
-export function assertOwnedResource(table: "services" | "staff" | "gallery" | "bookings" | "reviews", resourceId: string, salonId: string) {
+export function assertOwnedResource(table: "services" | "staff" | "gallery" | "bookings" | "reviews" | "service_addons", resourceId: string, salonId: string) {
   const row = db.prepare(`SELECT * FROM ${table} WHERE id = ? AND salon_id = ?`).get(resourceId, salonId) as any;
   if (!row) throw new ApiError(404, "Item not found.", "not_found");
   return row;

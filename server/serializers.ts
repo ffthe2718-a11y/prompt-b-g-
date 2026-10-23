@@ -25,6 +25,21 @@ export function serviceRow(row: any) {
   };
 }
 
+export function addonRow(row: any) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    price: Math.round(row.price_cents) / 100,
+    priceCents: row.price_cents,
+    durationMinutes: row.duration_minutes,
+    isActive: !!row.is_active,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function staffRow(row: any) {
   return {
     id: row.id,
@@ -68,6 +83,8 @@ export function bookingRow(row: any) {
     status: row.status,
     price: Math.round(row.price_cents) / 100,
     priceCents: row.price_cents,
+    addonIds: parseJson<string[]>(row.addon_ids_json, []),
+    whatsappReminderSentAt: row.whatsapp_reminder_sent_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -151,6 +168,9 @@ export function publicSalonBundle(row: any, options: { includeReviews?: boolean 
   const services = db
     .prepare("SELECT * FROM services WHERE salon_id = ? AND is_active = 1 ORDER BY sort_order, created_at")
     .all(row.id) as any[];
+  const addons = db
+    .prepare("SELECT * FROM service_addons WHERE salon_id = ? AND is_active = 1 ORDER BY sort_order, created_at")
+    .all(row.id) as any[];
   const staff = db
     .prepare("SELECT * FROM staff WHERE salon_id = ? AND is_active = 1 ORDER BY sort_order, created_at")
     .all(row.id) as any[];
@@ -210,6 +230,7 @@ export function publicSalonBundle(row: any, options: { includeReviews?: boolean 
     ratingCount,
     priceFrom: prices.length ? Math.min(...prices) / 100 : 0,
     services: services.map(serviceRow),
+    addons: addons.map(addonRow),
     staff: staff.map(staffRow),
     gallery: gallery.map(galleryRow),
     reviews: reviews.map(reviewRow),
@@ -223,6 +244,9 @@ export function publicSalonBundle(row: any, options: { includeReviews?: boolean 
 export function privateSalonBundle(row: any) {
   const services = db
     .prepare("SELECT * FROM services WHERE salon_id = ? ORDER BY sort_order, created_at")
+    .all(row.id) as any[];
+  const addons = db
+    .prepare("SELECT * FROM service_addons WHERE salon_id = ? ORDER BY sort_order, created_at")
     .all(row.id) as any[];
   const staff = db
     .prepare("SELECT * FROM staff WHERE salon_id = ? ORDER BY sort_order, created_at")
@@ -257,12 +281,16 @@ export function privateSalonBundle(row: any) {
     customDomain: row.custom_domain ?? "",
     customDomainVerified: row.custom_domain_verified === 1,
     domainVerifyToken: row.domain_verify_token ?? "",
+    whatsappRemindersEnabled: row.whatsapp_reminders_enabled !== 0,
+    whatsappReminderLeadHours: Number(row.whatsapp_reminder_lead_hours) || 2,
+    whatsappCustomTemplate: row.whatsapp_custom_template ?? "",
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
     sections: sectionsFor(row),
     hours: hoursFor(row),
     bookingSettings: bookingSettingsFor(row),
     services: services.map(serviceRow),
+    addons: addons.map(addonRow),
     staff: staff.map(staffRow),
     gallery: gallery.map(galleryRow),
     reviews: reviews.map(reviewRow),
@@ -310,6 +338,7 @@ export function directorySalon(row: any) {
     const bundle = publishedSalonBundle(row);
     const prices = (bundle.services ?? []).map((s: any) => Number(s.priceCents) || 0).filter((p: number) => p > 0);
     const names = (bundle.services ?? []).map((s: any) => s.name);
+    const categories = Array.from(new Set((bundle.services ?? []).map((s: any) => s.category).filter(Boolean)));
     return {
       id: row.id,
       name: bundle.name,
@@ -329,6 +358,8 @@ export function directorySalon(row: any) {
       ratingCount: bundle.ratingCount,
       serviceCount: names.length,
       priceFrom: prices.length ? Math.min(...prices) / 100 : 0,
+      priceTo: prices.length ? Math.max(...prices) / 100 : 0,
+      categories,
       services: names.slice(0, 6),
       publishedAt: row.published_at,
     };
@@ -336,9 +367,10 @@ export function directorySalon(row: any) {
 
   const { rating, ratingCount } = reviewSummary(row.id);
   const services = db
-    .prepare("SELECT name, price_cents FROM services WHERE salon_id = ? AND is_active = 1 ORDER BY sort_order")
+    .prepare("SELECT name, price_cents, category FROM services WHERE salon_id = ? AND is_active = 1 ORDER BY sort_order")
     .all(row.id) as any[];
   const prices = services.map((s) => s.price_cents).filter((p) => p > 0);
+  const categories = Array.from(new Set(services.map((s) => s.category).filter(Boolean)));
   return {
     id: row.id,
     name: row.name,
@@ -358,6 +390,8 @@ export function directorySalon(row: any) {
     ratingCount,
     serviceCount: services.length,
     priceFrom: prices.length ? Math.min(...prices) / 100 : 0,
+    priceTo: prices.length ? Math.max(...prices) / 100 : 0,
+    categories,
     services: services.slice(0, 6).map((s) => s.name),
     publishedAt: row.published_at,
   };
@@ -385,5 +419,50 @@ export function userPayload(row: any) {
     salon: salon
       ? { id: salon.id, name: salon.name, slug: salon.slug, status: salon.status }
       : null,
+  };
+}
+
+export function giftCardConfigRow(salonId: string) {
+  let row = db.prepare("SELECT * FROM gift_card_configs WHERE salon_id = ?").get(salonId) as any;
+  if (!row) {
+    const now = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO gift_card_configs (salon_id, enabled, denominations_json, headline, message, card_style, custom_bg_color, custom_accent_color, expiry_months, created_at, updated_at)
+       VALUES (?, 1, '[50, 100, 150, 250, 500]', 'The Gift of Luxury & Beauty', 'Treat someone special to an unforgettable salon experience.', 'gold_foil', '#12110E', '#D4AF37', 12, ?, ?)`
+    ).run(salonId, now, now);
+    row = db.prepare("SELECT * FROM gift_card_configs WHERE salon_id = ?").get(salonId) as any;
+  }
+  return {
+    salonId: row.salon_id,
+    enabled: row.enabled !== 0,
+    denominations: parseJson<number[]>(row.denominations_json, [50, 100, 150, 250, 500]),
+    headline: row.headline,
+    message: row.message,
+    cardStyle: row.card_style,
+    customBgColor: row.custom_bg_color,
+    customAccentColor: row.custom_accent_color,
+    expiryMonths: Number(row.expiry_months) || 12,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function giftCardRow(row: any) {
+  return {
+    id: row.id,
+    salonId: row.salon_id,
+    code: row.code,
+    amount: Math.round(row.amount_cents) / 100,
+    amountCents: row.amount_cents,
+    balance: Math.round(row.balance_cents) / 100,
+    balanceCents: row.balance_cents,
+    purchaserName: row.purchaser_name,
+    purchaserEmail: row.purchaser_email,
+    recipientName: row.recipient_name,
+    recipientEmail: row.recipient_email,
+    personalMessage: row.personal_message,
+    status: row.status,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
   };
 }

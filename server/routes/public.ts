@@ -12,11 +12,14 @@ import {
   minutesToTime,
   normalizeEmail,
   timeToMinutes,
+  toCents,
 } from "../validation";
 import {
   directorySalon,
   publishedSalonBundle,
   reviewRow,
+  giftCardConfigRow,
+  giftCardRow,
 } from "../serializers";
 import { getSettings } from "../settings";
 import { sendBookingEmails } from "../emails";
@@ -129,7 +132,7 @@ function salonBusy(intervals: BookingInterval[], start: number, end: number): bo
  * and re-checked inside the booking transaction so a stale UI can never
  * double-book a slot.
  */
-function computeAvailability(row: any, bundle: any, date: string, serviceId?: string, staffId?: string) {
+function computeAvailability(row: any, bundle: any, date: string, serviceId?: string, staffId?: string, addonIds: string[] = []) {
   const settings = bundle.bookingSettings || {};
   if (settings.enabled === false) {
     return { date, closed: true, reason: "Online booking is currently disabled.", slots: [] };
@@ -167,7 +170,9 @@ function computeAvailability(row: any, bundle: any, date: string, serviceId?: st
   const staff = staffId ? (bundle.staff || []).find((s: any) => s.id === staffId) : null;
   if (staffId && !staff) throw new ApiError(400, "That team member is no longer available.", "invalid_staff");
 
-  const duration = Math.max(5, Number(service?.durationMinutes) || interval);
+  const selectedAddons = (addonIds || []).map((id) => (bundle.addons || []).find((a: any) => a.id === id)).filter(Boolean);
+  const addonDuration = selectedAddons.reduce((sum: number, a: any) => sum + (Number(a.durationMinutes) || 0), 0);
+  const duration = Math.max(5, (Number(service?.durationMinutes) || interval) + addonDuration);
   if (openMinutes + duration > closeMinutes) {
     return {
       date,
@@ -296,7 +301,8 @@ router.get("/salons/:slug/availability", (req, res, next) => {
     const date = String(req.query.date || todayIn(bundle.timezone));
     const serviceId = req.query.serviceId ? String(req.query.serviceId) : undefined;
     const staffId = req.query.staffId ? String(req.query.staffId) : undefined;
-    res.json(computeAvailability(row, bundle, date, serviceId, staffId));
+    const addonIds = req.query.addonIds ? String(req.query.addonIds).split(",").filter(Boolean) : [];
+    res.json(computeAvailability(row, bundle, date, serviceId, staffId, addonIds));
   } catch (error) {
     next(error);
   }
@@ -314,6 +320,11 @@ router.post("/salons/:slug/bookings", publicFormLimiter, async (req, res, next) 
     const serviceId = cleanText(req.body?.serviceId, 80);
     const service = (bundle.services || []).find((s: any) => s.id === serviceId);
     if (!service) throw new ApiError(400, "Please choose a valid service.", "invalid_service");
+
+    const addonIds = Array.isArray(req.body?.addonIds) ? req.body.addonIds.map(String) : [];
+    const selectedAddons = addonIds.map((id: string) => (bundle.addons || []).find((a: any) => a.id === id)).filter(Boolean);
+    const addonPriceCents = selectedAddons.reduce((sum: number, a: any) => sum + (Number(a.priceCents) || 0), 0);
+    const totalPriceCents = (Number(service.priceCents) || 0) + addonPriceCents;
 
     const customerName = cleanText(req.body?.customerName, 100);
     if (customerName.length < 2) throw new ApiError(400, "Enter your full name.", "invalid_name");
@@ -341,7 +352,7 @@ router.post("/salons/:slug/bookings", publicFormLimiter, async (req, res, next) 
     const create = db.transaction(() => {
       // Re-derive the grid inside the write transaction: the browser may be
       // showing a slot that another guest took while this form was open.
-      const available = computeAvailability(row, bundle, date, service.id, staff?.id);
+      const available = computeAvailability(row, bundle, date, service.id, staff?.id, addonIds);
       const slot = available.slots.find((s: any) => s.time === time);
       if (!slot || !slot.available) {
         throw new ApiError(409, "That time was just booked. Please choose another slot.", "slot_unavailable");
@@ -349,8 +360,8 @@ router.post("/salons/:slug/bookings", publicFormLimiter, async (req, res, next) 
       db.prepare(
         `INSERT INTO bookings
           (id, salon_id, service_id, staff_id, service_name, staff_name, customer_name, customer_email,
-           customer_phone, date, time, notes, status, price_cents, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+           customer_phone, date, time, notes, status, price_cents, addon_ids_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`
       ).run(
         id,
         row.id,
@@ -364,7 +375,8 @@ router.post("/salons/:slug/bookings", publicFormLimiter, async (req, res, next) 
         date,
         time,
         cleanMultiline(req.body?.notes, 1000),
-        Number(service.priceCents) || 0,
+        totalPriceCents,
+        JSON.stringify(selectedAddons.map((a: any) => a.id)),
         now,
         now
       );
@@ -457,6 +469,126 @@ router.post("/salons/:slug/subscribe", publicFormLimiter, (req, res, next) => {
       nowIso()
     );
     res.json({ success: true, message: "You are on the list." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Public Gift Cards                                                  */
+/* ------------------------------------------------------------------ */
+
+function generateGiftCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const p1 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  const p2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `GIFT-${p1}-${p2}`;
+}
+
+router.get("/salons/:slug/gift-cards", (req, res, next) => {
+  try {
+    const row = publishedSalon(req.params.slug);
+    if (!row) throw new ApiError(404, "Salon not found.", "not_found");
+    const bundle = publishedSalonBundle(row);
+    const config = giftCardConfigRow(row.id);
+
+    res.json({
+      salon: {
+        id: bundle.id,
+        name: bundle.name,
+        slug: bundle.slug,
+        logoUrl: bundle.logoUrl,
+        heroImageUrl: bundle.heroImageUrl,
+        currency: bundle.currency,
+        city: bundle.city,
+      },
+      config,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/salons/:slug/gift-cards/purchase", publicFormLimiter, (req, res, next) => {
+  try {
+    const row = publishedSalon(req.params.slug);
+    if (!row) throw new ApiError(404, "Salon not found.", "not_found");
+    const bundle = publishedSalonBundle(row);
+    const config = giftCardConfigRow(row.id);
+
+    if (!config.enabled) {
+      throw new ApiError(400, "Online gift card purchases are currently disabled for this salon.", "disabled");
+    }
+
+    const amount = Number(req.body?.amount) || 0;
+    if (amount <= 0) throw new ApiError(400, "Choose or enter a valid gift card amount.", "invalid_amount");
+
+    const purchaserName = cleanText(req.body?.purchaserName, 100);
+    if (!purchaserName) throw new ApiError(400, "Your name is required.", "invalid_purchaser_name");
+
+    const purchaserEmail = normalizeEmail(req.body?.purchaserEmail);
+    if (!isEmail(purchaserEmail)) throw new ApiError(400, "Enter a valid email address.", "invalid_purchaser_email");
+
+    const recipientName = cleanText(req.body?.recipientName, 100);
+    if (!recipientName) throw new ApiError(400, "Recipient name is required.", "invalid_recipient_name");
+
+    const recipientEmail = normalizeEmail(req.body?.recipientEmail);
+    const personalMessage = cleanMultiline(req.body?.personalMessage, 500);
+
+    const amountCents = toCents(amount);
+    const code = generateGiftCode();
+    const id = newId();
+    const now = nowIso();
+
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + (config.expiryMonths || 12));
+    const expiresAt = expiryDate.toISOString();
+
+    db.prepare(
+      `INSERT INTO gift_cards
+        (id, salon_id, code, amount_cents, balance_cents, purchaser_name, purchaser_email, recipient_name, recipient_email, personal_message, status, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`
+    ).run(
+      id,
+      row.id,
+      code,
+      amountCents,
+      amountCents,
+      purchaserName,
+      purchaserEmail,
+      recipientName,
+      recipientEmail,
+      personalMessage,
+      now,
+      expiresAt
+    );
+
+    const cardData = db.prepare("SELECT * FROM gift_cards WHERE id = ?").get(id);
+    const origin = (process.env.PUBLIC_SITE_ORIGIN || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
+
+    res.status(201).json({
+      card: giftCardRow(cardData),
+      salonName: bundle.name,
+      currency: bundle.currency,
+      shareUrl: `${origin}/s/${bundle.slug}?gift=${code}`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/gift-cards/:code", (req, res, next) => {
+  try {
+    const code = String(req.params.code).trim();
+    const cardRow = db.prepare("SELECT * FROM gift_cards WHERE code = ? COLLATE NOCASE").get(code) as any;
+    if (!cardRow) throw new ApiError(404, "Gift card code not found.", "not_found");
+
+    const salonRow = db.prepare("SELECT name, slug, currency, logo_url FROM salons WHERE id = ?").get(cardRow.salon_id) as any;
+
+    res.json({
+      card: giftCardRow(cardRow),
+      salon: salonRow ? { name: salonRow.name, slug: salonRow.slug, currency: salonRow.currency, logoUrl: salonRow.logo_url } : null,
+    });
   } catch (error) {
     next(error);
   }

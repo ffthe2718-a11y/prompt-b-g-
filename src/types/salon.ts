@@ -39,6 +39,19 @@ export interface Service {
   updatedAt: string;
 }
 
+export interface ServiceAddon {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  priceCents: number;
+  durationMinutes: number;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StaffMember {
   id: string;
   name: string;
@@ -141,6 +154,7 @@ export interface Salon {
   ratingCount: number;
   priceFrom: number;
   services: Service[];
+  addons: ServiceAddon[];
   staff: StaffMember[];
   gallery: GalleryImage[];
   reviews: Review[];
@@ -155,6 +169,9 @@ export interface Salon {
   customDomain?: string;
   customDomainVerified?: boolean;
   domainVerifyToken?: string;
+  whatsappRemindersEnabled?: boolean;
+  whatsappReminderLeadHours?: number;
+  whatsappCustomTemplate?: string;
   hasUnpublishedChanges?: boolean;
   stats?: SalonStats;
   approvalStatus: ApprovalStatus;
@@ -189,6 +206,8 @@ export interface SalonSummary {
   ratingCount: number;
   serviceCount: number;
   priceFrom: number;
+  priceTo?: number;
+  categories?: string[];
   services: string[];
   publishedAt?: string | null;
 }
@@ -231,6 +250,8 @@ export interface Booking {
   status: BookingStatus;
   price: number;
   priceCents: number;
+  addonIds?: string[];
+  whatsappReminderSentAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -434,4 +455,38 @@ export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest ? `${hours}h ${rest}m` : `${hours} hr${hours > 1 ? "s" : ""}`;
+}
+
+export type GiftCardStyle = "gold_foil" | "minimal_dark" | "silk_blush" | "emerald_velvet";
+
+export interface GiftCardConfig {
+  salonId: string;
+  enabled: boolean;
+  denominations: number[];
+  headline: string;
+  message: string;
+  cardStyle: GiftCardStyle;
+  customBgColor: string;
+  customAccentColor: string;
+  expiryMonths: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GiftCard {
+  id: string;
+  salonId: string;
+  code: string;
+  amount: number;
+  amountCents: number;
+  balance: number;
+  balanceCents: number;
+  purchaserName: string;
+  purchaserEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  personalMessage: string;
+  status: "active" | "redeemed" | "expired";
+  createdAt: string;
+  expiresAt: string;
 }

@@ -31,6 +31,7 @@ import { usePlatformConfig } from "@/context/PlatformConfigContext";
 import { publicApi } from "@/lib/api";
 import type { SalonSummary } from "@/types/salon";
 import SalonCard from "@/components/salon/SalonCard";
+import TemplateStudio from "@/components/platform/TemplateStudio";
 import { cn } from "@/lib/utils";
 
 const HERO_IMAGE = "/images/salon-hero.jpg";
@@ -98,45 +99,6 @@ const steps = [
     number: "03",
     title: "Publish & share",
     body: "Hit publish and share your unique link. Take bookings, collect reviews and update your site whenever you like.",
-  },
-];
-
-const templates = [
-  {
-    id: "luxury",
-    name: "Luxury Gold",
-    mood: "Dark, sculptural, high-glamour",
-    bg: "linear-gradient(160deg,#17140b 0%,#080807 58%,#2a2212 100%)",
-    text: "#f5ecdc",
-    accent: "#d4af37",
-    secondary: "#8a7a54",
-  },
-  {
-    id: "blush",
-    name: "Blush Atelier",
-    mood: "Warm, editorial, soft luxury",
-    bg: "linear-gradient(160deg,#fbf3ed 0%,#f3e2d8 55%,#e9d2c6 100%)",
-    text: "#2c221d",
-    accent: "#b76e79",
-    secondary: "#9b8a7f",
-  },
-  {
-    id: "noir",
-    name: "Noir Minimal",
-    mood: "Clean, monochrome, modern",
-    bg: "linear-gradient(160deg,#19191c 0%,#09090a 58%,#222226 100%)",
-    text: "#f5f5f4",
-    accent: "#d6d3d1",
-    secondary: "#8a8a8a",
-  },
-  {
-    id: "emerald",
-    name: "Emerald Spa",
-    mood: "Earthy, calm, wellness-led",
-    bg: "linear-gradient(160deg,#0d211a 0%,#07120e 58%,#143529 100%)",
-    text: "#f2efe4",
-    accent: "#c9a86a",
-    secondary: "#86a294",
   },
 ];
 
@@ -549,72 +511,7 @@ export default function PlatformHome() {
       {/* TEMPLATES */}
       <section id="templates" className="scroll-mt-24 border-y border-border/60 bg-card/20">
         <div className="mx-auto w-full max-w-[1440px] px-4 py-20 sm:px-8 lg:px-12 lg:py-24">
-          <div className="mb-10 max-w-2xl">
-            <span className="text-[10px] font-bold uppercase tracking-[0.32em] text-primary">Designed to be yours</span>
-            <h2 className="mt-3 font-light text-4xl tracking-tight sm:text-5xl">
-              Start with a mood. <span className="font-serif italic text-primary">Make it yours.</span>
-            </h2>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Every template is a starting point for your colors, imagery and words — not a borrowed brand.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {templates.map((template, index) => (
-              <motion.div
-                key={template.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.06 }}
-              >
-                <Link
-                  to={`/signup?template=${template.id}`}
-                  className="group block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
-                >
-                  <div className="relative flex aspect-[4/5] flex-col p-4" style={{ background: template.bg, color: template.text }}>
-                    <div className="flex items-center justify-between">
-                      <span className="font-serif text-[9px] tracking-[0.24em] uppercase opacity-80">Your salon</span>
-                      <span className="text-[8px] uppercase tracking-[0.2em] opacity-50">Menu</span>
-                    </div>
-                    <div className="flex flex-1 flex-col items-center justify-center text-center">
-                      <div
-                        className="mb-4 flex h-10 w-10 items-center justify-center rounded-full border"
-                        style={{ borderColor: `${template.accent}66`, color: template.accent }}
-                      >
-                        <Scissors className="h-3.5 w-3.5 rotate-45" />
-                      </div>
-                      <p className="font-serif text-2xl leading-tight">Your<br />salon name</p>
-                      <p className="mt-2 text-[7px] uppercase tracking-[0.24em] opacity-60">Est. by you</p>
-                      <span
-                        className="mt-4 rounded-full px-3 py-1 text-[7px] font-bold uppercase tracking-[0.16em]"
-                        style={{ backgroundColor: template.accent, color: template.id === "blush" ? "#fff" : "#0a0a0a" }}
-                      >
-                        Book now
-                      </span>
-                    </div>
-                    <div className="space-y-1.5">
-                      {[80, 60, 70].map((width) => (
-                        <div key={width} className="flex justify-between">
-                          <span className="h-1 rounded-full" style={{ width: `${width}%`, backgroundColor: template.secondary, opacity: 0.5 }} />
-                          <span className="h-1 w-6 rounded-full" style={{ backgroundColor: template.accent, opacity: 0.7 }} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4">
-                    <div>
-                      <h3 className="text-xs font-semibold text-foreground">{template.name}</h3>
-                      <p className="mt-0.5 text-[9px] text-muted-foreground">{template.mood}</p>
-                    </div>
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-black">
-                      <ArrowUpRight className="h-3 w-3" />
-                    </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+          <TemplateStudio startLink={startLink} />
         </div>
       </section>
 

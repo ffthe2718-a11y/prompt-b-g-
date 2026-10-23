@@ -15,6 +15,7 @@ import uploadRoutes from "./server/routes/uploads";
 import adminRoutes from "./server/routes/admin";
 import { googleConfigured } from "./server/google";
 import { backfillLegacyApprovals } from "./server/approval";
+import { startWhatsAppScheduler } from "./server/whatsappScheduler";
 
 
 const PORT = Number(process.env.PORT || 3000);
@@ -108,6 +109,7 @@ function injectSalonMeta(html: string, slug: string): string {
 
 async function startServer() {
   backfillLegacyApprovals();
+  startWhatsAppScheduler();
   const app = express();
   app.set("trust proxy", 1);
   app.disable("x-powered-by");

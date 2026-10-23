@@ -23,6 +23,8 @@ import { siteTheme } from "@/components/site/theme";
 import { AnnouncementBar, SalonFooter, SalonNav } from "@/components/site/SalonChrome";
 import BookingSection from "@/components/site/BookingSection";
 import ReviewsSection, { Stars } from "@/components/site/ReviewsSection";
+import LuxuryMapPlaceholder from "@/components/site/LuxuryMapPlaceholder";
+import GiftCardPurchaseModal from "@/components/site/GiftCardPurchaseModal";
 import {
   fullAddress,
   initials,
@@ -31,6 +33,8 @@ import {
   twitterUrl,
   mapsLink,
   whatsappLink,
+  DEFAULT_HOURS,
+  formatTime12,
 } from "@/lib/salonUi";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +44,16 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
   const [selectedStaffId, setSelectedStaffId] = useState("");
   const [category, setCategory] = useState("All");
   const [lightbox, setLightbox] = useState<{ imageUrl: string; caption: string } | null>(null);
+  const [giftModalOpen, setGiftModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      if (search.has("gift")) {
+        setGiftModalOpen(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (salon.services.length && !salon.services.some((service) => service.id === selectedServiceId)) {
@@ -504,11 +518,11 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
                       <Clock className="h-3 w-3" style={{ color: theme.accent }} /> Opening hours
                     </p>
                     <div className="space-y-1">
-                      {salon.hours.map((hour) => (
+                      {(salon.hours && salon.hours.length > 0 ? salon.hours : DEFAULT_HOURS).map((hour) => (
                         <div key={hour.day} className="flex justify-between gap-3 text-[10px]">
                           <span style={{ color: theme.muted }}>{hour.day}</span>
                           <span style={{ color: hour.closed ? theme.muted : theme.ink }}>
-                            {hour.closed ? "Closed" : `${hour.open} – ${hour.close}`}
+                            {hour.closed ? "Closed" : `${formatTime12(hour.open)} – ${formatTime12(hour.close)}`}
                           </span>
                         </div>
                       ))}
@@ -535,67 +549,65 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
                     </a>
                   )}
                 </div>
+
+                {/* Social Channels */}
+                {(salon.instagram || salon.facebook || salon.twitter || salon.whatsapp) && (
+                  <div className="mt-6 border-t pt-5" style={{ borderColor: theme.border }}>
+                    <p className="mb-2 text-[8px] font-bold uppercase tracking-[0.2em]" style={{ color: theme.muted }}>
+                      Connect with us
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {whatsappLink(salon.whatsapp || salon.phone, `Hello ${salon.name}, I would like to book an appointment.`) && (
+                        <a
+                          href={whatsappLink(salon.whatsapp || salon.phone, `Hello ${salon.name}, I would like to book an appointment.`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[8px] font-bold uppercase tracking-[0.14em]"
+                          style={{ backgroundColor: "#128C4A", color: "#fff" }}
+                        >
+                          <MessageCircle className="h-3 w-3" /> WhatsApp
+                        </a>
+                      )}
+                      {salon.instagram && (
+                        <a
+                          href={instagramUrl(salon.instagram)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[8px] font-bold uppercase tracking-[0.14em]"
+                          style={{ borderColor: theme.border, color: theme.ink }}
+                        >
+                          <Instagram className="h-3 w-3" /> @{salon.instagram}
+                        </a>
+                      )}
+                      {salon.facebook && (
+                        <a
+                          href={facebookUrl(salon.facebook)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[8px] font-bold uppercase tracking-[0.14em]"
+                          style={{ borderColor: theme.border, color: theme.ink }}
+                        >
+                          <Facebook className="h-3 w-3" /> Facebook
+                        </a>
+                      )}
+                      {salon.twitter && (
+                        <a
+                          href={twitterUrl(salon.twitter)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[8px] font-bold uppercase tracking-[0.14em]"
+                          style={{ borderColor: theme.border, color: theme.ink }}
+                        >
+                          <Twitter className="h-3 w-3" /> @{salon.twitter}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div
-                className="relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-3xl border p-6 sm:p-9"
-                style={{ borderColor: theme.border, background: theme.heroFallback }}
-              >
-                <div className="relative">
-                  <Scissors className="h-5 w-5 rotate-45" style={{ color: theme.accent }} />
-                  <p className="mt-4 max-w-xs font-serif text-2xl leading-snug" style={{ color: theme.ink }}>
-                    {salon.tagline || "Your next appointment is a small act of self-care."}
-                  </p>
-                </div>
-                <div className="relative">
-                  <div className="flex flex-wrap gap-2">
-                    {whatsappLink(salon.whatsapp || salon.phone, `Hello ${salon.name}, I would like to book an appointment.`) && (
-                      <a
-                        href={whatsappLink(salon.whatsapp || salon.phone, `Hello ${salon.name}, I would like to book an appointment.`)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center gap-2 rounded-full px-4 text-[8px] font-bold uppercase tracking-[0.14em]"
-                        style={{ backgroundColor: "#128C4A", color: "#fff" }}
-                      >
-                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                      </a>
-                    )}
-                    {salon.instagram && (
-                      <a
-                        href={instagramUrl(salon.instagram)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[8px] font-bold uppercase tracking-[0.14em]"
-                        style={{ borderColor: theme.border, color: theme.ink }}
-                      >
-                        <Instagram className="h-3.5 w-3.5" /> @{salon.instagram}
-                      </a>
-                    )}
-                    {salon.facebook && (
-                      <a
-                        href={facebookUrl(salon.facebook)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[8px] font-bold uppercase tracking-[0.14em]"
-                        style={{ borderColor: theme.border, color: theme.ink }}
-                      >
-                        <Facebook className="h-3.5 w-3.5" /> Facebook
-                      </a>
-                    )}
-                    {salon.twitter && (
-                      <a
-                        href={twitterUrl(salon.twitter)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[8px] font-bold uppercase tracking-[0.14em]"
-                        style={{ borderColor: theme.border, color: theme.ink }}
-                      >
-                        <Twitter className="h-3.5 w-3.5" /> @{salon.twitter}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Column 2: Static Map Placeholder */}
+              <LuxuryMapPlaceholder salon={salon} theme={theme} className="h-full min-h-[380px]" />
             </div>
           </section>
         );
@@ -613,7 +625,12 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
       style={{ ...theme.vars, backgroundColor: theme.bg, color: theme.ink } as CSSProperties}
     >
       <AnnouncementBar salon={salon} theme={theme} />
-      <SalonNav salon={salon} theme={theme} onBook={() => book()} />
+      <SalonNav
+        salon={salon}
+        theme={theme}
+        onBook={() => book()}
+        onBuyGiftCard={() => setGiftModalOpen(true)}
+      />
 
       {heroEnabled && (
         <section className="relative flex min-h-[560px] items-center justify-center overflow-hidden sm:min-h-[660px]">
@@ -847,6 +864,13 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Gift Card Purchase Modal */}
+      <GiftCardPurchaseModal
+        salonSlug={salon.slug}
+        isOpen={giftModalOpen}
+        onClose={() => setGiftModalOpen(false)}
+      />
     </div>
   );
 }

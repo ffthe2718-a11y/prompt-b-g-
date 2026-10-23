@@ -126,6 +126,9 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
         if (template) {
           try {
             sessionStorage.setItem("velvet_template", template);
+            if (params.get("primary")) sessionStorage.setItem("velvet_primary", params.get("primary")!);
+            if (params.get("accent")) sessionStorage.setItem("velvet_accent", params.get("accent")!);
+            if (params.get("name")) sessionStorage.setItem("velvet_name", params.get("name")!);
           } catch {
             /* noop */
           }
@@ -135,7 +138,14 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
         toast.success(`Welcome to Velvet, ${created.name.split(" ")[0]}.`, {
           description: "Let's build your salon website.",
         });
-        navigate(template ? `/onboarding?template=${encodeURIComponent(template)}` : "/onboarding", {
+        const forward = new URLSearchParams();
+        if (template) forward.set("template", template);
+        if (params.get("primary")) forward.set("primary", params.get("primary")!);
+        if (params.get("accent")) forward.set("accent", params.get("accent")!);
+        if (params.get("name")) forward.set("name", params.get("name")!);
+        if (params.get("tagline")) forward.set("tagline", params.get("tagline")!);
+        const forwardQuery = forward.toString();
+        navigate(forwardQuery ? `/onboarding?${forwardQuery}` : "/onboarding", {
           replace: true,
         });
       } else {

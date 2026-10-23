@@ -21,7 +21,11 @@ import type {
   SalonSummary,
   SectionConfig,
   Service,
+  ServiceAddon,
   StaffMember,
+  GiftCard,
+  GiftCardConfig,
+  GiftCardStyle,
 } from "@/types/salon";
 
 const TOKEN_KEY = "velvet_token";
@@ -266,6 +270,26 @@ export const salonApi = {
     });
   },
 
+  /* Service Add-ons */
+  async createAddon(payload: {
+    name: string;
+    description?: string;
+    price: number;
+    durationMinutes?: number;
+    isActive?: boolean;
+  }) {
+    return request<{ addon: ServiceAddon }>("/salons/me/addons", { method: "POST", body: payload });
+  },
+  async updateAddon(id: string, patch: Partial<ServiceAddon>) {
+    return request<{ addon: ServiceAddon }>(`/salons/me/addons/${id}`, { method: "PATCH", body: patch });
+  },
+  async deleteAddon(id: string) {
+    return request<{ success: boolean }>(`/salons/me/addons/${id}`, { method: "DELETE" });
+  },
+  async reorderAddons(ids: string[]) {
+    return request<{ success: boolean }>("/salons/me/addons/reorder", { method: "POST", body: { ids } });
+  },
+
   /* Staff */
   async createStaff(payload: {
     name: string;
@@ -318,6 +342,54 @@ export const salonApi = {
       { method: "POST" }
     );
   },
+  async sendWhatsAppReminder(id: string) {
+    return request<{
+      success: boolean;
+      reminderId: string;
+      message: string;
+      waUrl: string;
+      mode: "api" | "simulated";
+    }>(`/salons/me/bookings/${id}/send-whatsapp-reminder`, { method: "POST" });
+  },
+
+  /* WhatsApp Settings */
+  async getWhatsAppSettings() {
+    return request<{
+      enabled: boolean;
+      leadHours: number;
+      customTemplate: string;
+      logs: {
+        id: string;
+        bookingId: string;
+        customerName: string;
+        customerPhone: string;
+        serviceName: string;
+        appointmentDate: string;
+        appointmentTime: string;
+        messageBody: string;
+        status: "sent" | "delivered" | "failed" | "scheduled";
+        sentAt: string;
+        errorMessage: string;
+        waUrl: string;
+      }[];
+    }>("/salons/me/whatsapp-settings");
+  },
+  async updateWhatsAppSettings(patch: { enabled?: boolean; leadHours?: number; customTemplate?: string }) {
+    return request<{
+      enabled: boolean;
+      leadHours: number;
+      customTemplate: string;
+    }>("/salons/me/whatsapp-settings", { method: "PATCH", body: patch });
+  },
+  async testWhatsAppMessage(phone: string) {
+    return request<{
+      success: boolean;
+      reminderId: string;
+      message: string;
+      waUrl: string;
+      mode: "api" | "simulated";
+    }>("/salons/me/whatsapp/test", { method: "POST", body: { phone } });
+  },
 
   /* Newsletter */
   async subscribers() {
@@ -369,6 +441,36 @@ export const salonApi = {
   async removeDomain() {
     return request<{ success: boolean }>("/salons/me/domain", { method: "DELETE" });
   },
+
+  /* Gift Cards */
+  async getGiftCardConfig() {
+    return request<{ config: GiftCardConfig; cards: GiftCard[] }>("/salons/me/gift-cards/config");
+  },
+  async updateGiftCardConfig(patch: Partial<GiftCardConfig>) {
+    return request<{ config: GiftCardConfig }>("/salons/me/gift-cards/config", {
+      method: "PATCH",
+      body: patch,
+    });
+  },
+  async issueGiftCard(payload: {
+    amount: number;
+    purchaserName?: string;
+    purchaserEmail?: string;
+    recipientName: string;
+    recipientEmail?: string;
+    personalMessage?: string;
+  }) {
+    return request<{ card: GiftCard }>("/salons/me/gift-cards/issue", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async redeemGiftCard(id: string, amount: number) {
+    return request<{ card: GiftCard }>(`/salons/me/gift-cards/${id}/redeem`, {
+      method: "POST",
+      body: { amount },
+    });
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -405,10 +507,11 @@ export const publicApi = {
   async getSalon(slug: string) {
     return request<{ salon: Salon }>(`/public/salons/${encodeURIComponent(slug)}`, { auth: false });
   },
-  async availability(slug: string, date: string, serviceId?: string, staffId?: string) {
+  async availability(slug: string, date: string, serviceId?: string, staffId?: string, addonIds?: string[]) {
     const search = new URLSearchParams({ date });
     if (serviceId) search.set("serviceId", serviceId);
     if (staffId) search.set("staffId", staffId);
+    if (addonIds && addonIds.length) search.set("addonIds", addonIds.join(","));
     return request<Availability>(`/public/salons/${encodeURIComponent(slug)}/availability?${search.toString()}`, {
       auth: false,
     });
@@ -424,6 +527,7 @@ export const publicApi = {
       date: string;
       time: string;
       notes?: string;
+      addonIds?: string[];
     }
   ) {
     return request<{
@@ -456,6 +560,48 @@ export const publicApi = {
       body: { email },
       auth: false,
     });
+  },
+  async getPublicGiftCards(slug: string) {
+    return request<{
+      salon: {
+        id: string;
+        name: string;
+        slug: string;
+        logoUrl: string;
+        heroImageUrl: string;
+        currency: string;
+        city: string;
+      };
+      config: GiftCardConfig;
+    }>(`/public/salons/${encodeURIComponent(slug)}/gift-cards`, { auth: false });
+  },
+  async purchaseGiftCard(
+    slug: string,
+    payload: {
+      amount: number;
+      purchaserName: string;
+      purchaserEmail: string;
+      recipientName: string;
+      recipientEmail?: string;
+      personalMessage?: string;
+    }
+  ) {
+    return request<{
+      card: GiftCard;
+      salonName: string;
+      currency: string;
+      shareUrl: string;
+    }>(`/public/salons/${encodeURIComponent(slug)}/gift-cards/purchase`, {
+      method: "POST",
+      body: payload,
+      auth: false,
+    });
+  },
+  async checkGiftCardBalance(code: string) {
+    return request<{
+      card: GiftCard;
+      salon: { name: string; slug: string; currency: string; logoUrl: string } | null;
+    }>(`/public/gift-cards/${encodeURIComponent(code)}`, { auth: false });
   },
 };
 

@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Clock,
   Facebook,
+  Gift,
   Globe,
   Instagram,
   Mail,
@@ -19,7 +20,19 @@ import {
 } from "lucide-react";
 import type { Salon } from "@/types/salon";
 import type { SiteTheme } from "@/components/site/theme";
-import { initials, fullAddress, mapsLink, instagramUrl, facebookUrl, twitterUrl, tiktokUrl, whatsappLink } from "@/lib/salonUi";
+import {
+  initials,
+  fullAddress,
+  mapsLink,
+  instagramUrl,
+  facebookUrl,
+  twitterUrl,
+  tiktokUrl,
+  whatsappLink,
+  DEFAULT_HOURS,
+  formatTime12,
+  getSalonOpenStatus,
+} from "@/lib/salonUi";
 import { publicApi } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -72,7 +85,17 @@ export function AnnouncementBar({ salon, theme }: { salon: Salon; theme: SiteThe
   );
 }
 
-export function SalonNav({ salon, theme, onBook }: { salon: Salon; theme: SiteTheme; onBook: () => void }) {
+export function SalonNav({
+  salon,
+  theme,
+  onBook,
+  onBuyGiftCard,
+}: {
+  salon: Salon;
+  theme: SiteTheme;
+  onBook: () => void;
+  onBuyGiftCard?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const enabled = new Set(salon.sections.filter((section) => section.enabled).map((section) => section.id));
@@ -149,6 +172,16 @@ export function SalonNav({ salon, theme, onBook }: { salon: Salon; theme: SiteTh
             >
               <Phone className="h-3.5 w-3.5" />
             </a>
+          )}
+          {onBuyGiftCard && (
+            <button
+              onClick={onBuyGiftCard}
+              className="flex h-9 items-center gap-1.5 rounded-full border px-4 text-[9px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-80"
+              style={{ borderColor: `${theme.accent}66`, color: theme.ink, backgroundColor: `${theme.accent}10` }}
+            >
+              <Gift className="h-3 w-3" style={{ color: theme.accent }} />
+              Gift Cards
+            </button>
           )}
           <button
             onClick={onBook}
@@ -257,6 +290,10 @@ export function SalonFooter({ salon, theme }: { salon: Salon; theme: SiteTheme }
     { url: salon.website, icon: Globe, label: "Website" },
   ].filter((item) => item.url);
 
+  const hoursList = salon.hours && salon.hours.length > 0 ? salon.hours : DEFAULT_HOURS;
+  const status = getSalonOpenStatus(hoursList);
+  const todayDayName = status.today || "";
+
   const handleSubscribe = async (event: FormEvent) => {
     event.preventDefault();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
@@ -352,16 +389,50 @@ export function SalonFooter({ salon, theme }: { salon: Salon; theme: SiteTheme }
           </div>
 
           <div>
-            <h4 className="text-[9px] font-bold uppercase tracking-[0.24em]" style={{ color: theme.ink }}>Opening hours</h4>
-            <div className="mt-4 space-y-1.5">
-              {salon.hours.map((hour) => (
-                <div key={hour.day} className="flex justify-between gap-3 text-[10px]">
-                  <span style={{ color: theme.muted }}>{hour.day}</span>
-                  <span style={{ color: hour.closed ? theme.muted : theme.ink }}>
-                    {hour.closed ? "Closed" : `${hour.open} – ${hour.close}`}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-[9px] font-bold uppercase tracking-[0.24em]" style={{ color: theme.ink }}>
+                Opening hours
+              </h4>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-medium ${
+                  status.isOpen ? "bg-emerald-500/10 text-emerald-400" : "bg-muted/40 text-muted-foreground"
+                }`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${status.isOpen ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                {status.isOpen ? "Open now" : "Closed now"}
+              </span>
+            </div>
+
+            <div className="mt-3.5 space-y-1">
+              {hoursList.map((hour) => {
+                const isToday = hour.day.toLowerCase() === todayDayName.toLowerCase();
+                return (
+                  <div
+                    key={hour.day}
+                    className={`flex items-center justify-between gap-3 rounded-md px-1.5 py-0.5 text-[10px] transition-colors ${
+                      isToday ? "font-medium" : ""
+                    }`}
+                    style={isToday ? { backgroundColor: `${theme.accent}15` } : undefined}
+                  >
+                    <span className="flex items-center gap-1.5" style={{ color: isToday ? theme.ink : theme.muted }}>
+                      {isToday && <span className="h-1 w-1 rounded-full" style={{ backgroundColor: theme.accent }} />}
+                      <span>{hour.day}</span>
+                      {isToday && (
+                        <span className="text-[8px] uppercase tracking-wider font-semibold opacity-80" style={{ color: theme.accent }}>
+                          Today
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ color: hour.closed ? theme.muted : theme.ink }}>
+                      {hour.closed ? (
+                        <span className="opacity-60">Closed</span>
+                      ) : (
+                        `${formatTime12(hour.open)} – ${formatTime12(hour.close)}`
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             <form onSubmit={handleSubscribe} className="mt-6">

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import type { Service, Salon } from "@/types/salon";
+import type { Service, ServiceAddon, Salon } from "@/types/salon";
 import { CURRENCY_SYMBOLS, formatDuration, formatPrice } from "@/types/salon";
 import { salonApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -73,6 +73,117 @@ export default function Services({
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"services" | "addons">("services");
+  const [addonOpen, setAddonOpen] = useState(false);
+  const [editingAddon, setEditingAddon] = useState<ServiceAddon | null>(null);
+  const [addonDraft, setAddonDraft] = useState({ name: "", description: "", price: "", durationMinutes: "15", isActive: true });
+  const [deletingAddon, setDeletingAddon] = useState<ServiceAddon | null>(null);
+  const [addonDeleteBusy, setAddonDeleteBusy] = useState(false);
+  const [addonSaving, setAddonSaving] = useState(false);
+  const [addonPendingId, setAddonPendingId] = useState<string | null>(null);
+
+  const addons = useMemo(
+    () => [...(salon.addons || [])].sort((a, b) => a.sortOrder - b.sortOrder),
+    [salon.addons]
+  );
+
+  const openCreateAddon = () => {
+    setEditingAddon(null);
+    setAddonDraft({ name: "", description: "", price: "", durationMinutes: "15", isActive: true });
+    setAddonOpen(true);
+  };
+
+  const openEditAddon = (addon: ServiceAddon) => {
+    setEditingAddon(addon);
+    setAddonDraft({
+      name: addon.name,
+      description: addon.description,
+      price: String(addon.price),
+      durationMinutes: String(addon.durationMinutes || 15),
+      isActive: addon.isActive,
+    });
+    setAddonOpen(true);
+  };
+
+  const submitAddon = async () => {
+    if (!addonDraft.name.trim()) {
+      toast.error("Give your add-on a name.");
+      return;
+    }
+    const price = Number(addonDraft.price);
+    if (!addonDraft.price.trim() || Number.isNaN(price) || price < 0) {
+      toast.error("Enter a valid price for the add-on.");
+      return;
+    }
+    const payload = {
+      name: addonDraft.name.trim(),
+      description: addonDraft.description.trim(),
+      price,
+      durationMinutes: Math.max(0, Number(addonDraft.durationMinutes) || 0),
+      isActive: addonDraft.isActive,
+    };
+    setAddonSaving(true);
+    try {
+      if (editingAddon) {
+        await salonApi.updateAddon(editingAddon.id, payload);
+        toast.success("Service add-on updated.");
+      } else {
+        await salonApi.createAddon(payload);
+        toast.success("Service add-on added.");
+      }
+      await refresh();
+      setAddonOpen(false);
+    } catch (error: any) {
+      toast.error(error?.message || "Could not save add-on.");
+    } finally {
+      setAddonSaving(false);
+    }
+  };
+
+  const toggleAddonActive = async (addon: ServiceAddon, active: boolean) => {
+    setAddonPendingId(addon.id);
+    try {
+      await salonApi.updateAddon(addon.id, { isActive: active });
+      await refresh();
+      toast.success(active ? "Add-on enabled." : "Add-on hidden.");
+    } catch (error: any) {
+      toast.error(error?.message || "Could not update add-on status.");
+    } finally {
+      setAddonPendingId(null);
+    }
+  };
+
+  const handleDeleteAddon = async () => {
+    if (!deletingAddon) return;
+    setAddonDeleteBusy(true);
+    try {
+      await salonApi.deleteAddon(deletingAddon.id);
+      await refresh();
+      toast.success("Add-on deleted.");
+      setDeletingAddon(null);
+    } catch (error: any) {
+      toast.error(error?.message || "Could not delete add-on.");
+    } finally {
+      setAddonDeleteBusy(false);
+    }
+  };
+
+  const moveAddon = async (index: number, direction: "up" | "down") => {
+    const next = [...addons];
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= next.length) return;
+    const temp = next[index];
+    next[index] = next[target];
+    next[target] = temp;
+    const ids = next.map((a) => a.id);
+    try {
+      await salonApi.reorderAddons(ids);
+      await refresh();
+    } catch (error: any) {
+      toast.error("Could not reorder add-ons.");
+    }
+  };
 
   // Bulk Edit mode states
   const [bulkMode, setBulkMode] = useState(false);
@@ -417,7 +528,144 @@ export default function Services({
         </div>
       </Panel>
 
-      <Panel>
+      {/* Tabs */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setActiveTab("services")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm",
+            activeTab === "services"
+              ? "bg-primary text-black"
+              : "bg-card border border-border text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Scissors className="h-4 w-4" />
+          Services Menu ({services.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("addons")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all shadow-sm",
+            activeTab === "addons"
+              ? "bg-primary text-black"
+              : "bg-card border border-border text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Sparkles className="h-4 w-4" />
+          Service Add-ons ({addons.length})
+        </button>
+      </div>
+
+      {activeTab === "addons" && (
+        <Panel>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Service Add-ons & Upgrades</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Optional upgrades (e.g. Extra Scalp Massage, Luxury Oil) that appear as checkboxes for clients during online booking.
+              </p>
+            </div>
+            <button
+              onClick={openCreateAddon}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black transition-opacity hover:opacity-90 shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add add-on
+            </button>
+          </div>
+
+          <div className="mt-6 divide-y divide-border rounded-2xl border border-border bg-card/40">
+            {addons.length === 0 ? (
+              <div className="p-8 text-center">
+                <Sparkles className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                <p className="mt-3 text-sm font-medium text-foreground">No add-ons created yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">Create optional upgrades like scalp massages or oils for your clients to select.</p>
+                <button
+                  onClick={openCreateAddon}
+                  className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-black"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add first add-on
+                </button>
+              </div>
+            ) : (
+              addons.map((addon, index) => (
+                <div key={addon.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-card/60">
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col gap-0.5 pt-0.5">
+                      <button
+                        onClick={() => moveAddon(index, "up")}
+                        disabled={index === 0}
+                        className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        title="Move up"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => moveAddon(index, "down")}
+                        disabled={index === addons.length - 1}
+                        className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        title="Move down"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-semibold text-foreground">{addon.name}</h4>
+                        <span className={cn(
+                          "rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider",
+                          addon.isActive ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
+                        )}>
+                          {addon.isActive ? "Active" : "Hidden"}
+                        </span>
+                      </div>
+                      {addon.description && (
+                        <p className="mt-1 text-xs text-muted-foreground">{addon.description}</p>
+                      )}
+                      <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <span className="font-semibold text-foreground">{formatPrice(addon.price, salon.currency)}</span>
+                        {addon.durationMinutes > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Clock3 className="h-3 w-3" /> +{addon.durationMinutes}m
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:self-center">
+                    <Switch
+                      checked={addon.isActive}
+                      onCheckedChange={(checked) => void toggleAddonActive(addon, checked)}
+                      disabled={addonPendingId === addon.id}
+                    />
+                    <button
+                      onClick={() => openEditAddon(addon)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground"
+                      title="Edit add-on"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingAddon(addon)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-red-400"
+                      title="Delete add-on"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Panel>
+      )}
+
+      {activeTab === "services" && (
+        <>
+          <Panel>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-1.5">
             {categories.map((category) => (
@@ -1187,6 +1435,114 @@ export default function Services({
             ))}
           </div>
         </div>
+      </Modal>
+        </>
+      )}
+
+      {/* Add/Edit Add-on Modal */}
+      <Modal
+        open={addonOpen}
+        onClose={() => setAddonOpen(false)}
+        title={editingAddon ? "Edit service add-on" : "Create service add-on"}
+        description="Add optional upgrades that clients can check during online booking."
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setAddonOpen(false)}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+            >
+              Cancel
+            </button>
+            <SavingButton saving={addonSaving} onClick={() => void submitAddon()}>
+              {editingAddon ? "Save changes" : "Create add-on"}
+            </SavingButton>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="Add-on Name">
+            <input
+              value={addonDraft.name}
+              onChange={(e) => setAddonDraft({ ...addonDraft, name: e.target.value })}
+              placeholder="e.g. Extra Scalp Massage, Luxury Oil"
+              className={inputClass}
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={`Price (${salon.currency})`}>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={addonDraft.price}
+                onChange={(e) => setAddonDraft({ ...addonDraft, price: e.target.value })}
+                placeholder="250"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Added Duration (minutes)">
+              <input
+                type="number"
+                min="0"
+                step="5"
+                value={addonDraft.durationMinutes}
+                onChange={(e) => setAddonDraft({ ...addonDraft, durationMinutes: e.target.value })}
+                placeholder="15"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Field label="Description (optional)">
+            <textarea
+              value={addonDraft.description}
+              onChange={(e) => setAddonDraft({ ...addonDraft, description: e.target.value })}
+              placeholder="Briefly describe what this upgrade includes..."
+              className={textareaClass}
+              rows={2}
+            />
+          </Field>
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card/40 p-3">
+            <div>
+              <p className="text-xs font-medium text-foreground">Bookable on website</p>
+              <p className="text-[10px] text-muted-foreground">Show this add-on to clients during booking</p>
+            </div>
+            <Switch
+              checked={addonDraft.isActive}
+              onCheckedChange={(checked) => setAddonDraft({ ...addonDraft, isActive: checked })}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Add-on Modal */}
+      <Modal
+        open={!!deletingAddon}
+        onClose={() => setDeletingAddon(null)}
+        title="Delete add-on?"
+        description={`Are you sure you want to delete "${deletingAddon?.name}"? This cannot be undone.`}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setDeletingAddon(null)}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground"
+            >
+              Cancel
+            </button>
+            <SavingButton
+              saving={addonDeleteBusy}
+              onClick={() => void handleDeleteAddon()}
+              className="bg-red-500 text-white hover:bg-red-500/90"
+            >
+              Delete add-on
+            </SavingButton>
+          </>
+        }
+      >
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          This upgrade will be removed from your online booking menu. Past appointments using this add-on will not be affected.
+        </p>
       </Modal>
     </div>
   );

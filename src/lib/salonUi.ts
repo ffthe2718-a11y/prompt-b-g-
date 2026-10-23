@@ -1,4 +1,4 @@
-import type { Salon, TemplateId } from "@/types/salon";
+import type { DayHours, Salon, TemplateId } from "@/types/salon";
 
 export function slugify(value: string): string {
   return value
@@ -57,6 +57,67 @@ export const TEMPLATE_PRESETS: Record<
 };
 
 export const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+export const DEFAULT_HOURS: DayHours[] = [
+  { day: "Monday", closed: false, open: "10:00", close: "20:00" },
+  { day: "Tuesday", closed: false, open: "10:00", close: "20:00" },
+  { day: "Wednesday", closed: false, open: "10:00", close: "20:00" },
+  { day: "Thursday", closed: false, open: "10:00", close: "20:00" },
+  { day: "Friday", closed: false, open: "10:00", close: "20:00" },
+  { day: "Saturday", closed: false, open: "10:00", close: "20:00" },
+  { day: "Sunday", closed: true, open: "10:00", close: "18:00" },
+];
+
+export function formatTime12(time: string): string {
+  if (!time) return "";
+  const [hStr, mStr] = time.split(":");
+  const h = parseInt(hStr, 10);
+  if (isNaN(h)) return time;
+  const m = mStr ?? "00";
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
+
+export function getSalonOpenStatus(hours: DayHours[] | undefined) {
+  if (!hours || hours.length === 0) {
+    return { isOpen: false, text: "Hours unavailable", today: "" };
+  }
+  const now = new Date();
+  const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(now);
+  const todayHour = hours.find((h) => h.day.toLowerCase() === dayName.toLowerCase());
+  if (!todayHour || todayHour.closed) {
+    return { isOpen: false, text: "Closed today", today: dayName, todayHour };
+  }
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [openH, openM] = todayHour.open.split(":").map(Number);
+  const [closeH, closeM] = todayHour.close.split(":").map(Number);
+  const openMinutes = (openH || 0) * 60 + (openM || 0);
+  const closeMinutes = (closeH || 0) * 60 + (closeM || 0);
+
+  if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+    return {
+      isOpen: true,
+      text: `Open now until ${formatTime12(todayHour.close)}`,
+      today: dayName,
+      todayHour,
+    };
+  } else if (currentMinutes < openMinutes) {
+    return {
+      isOpen: false,
+      text: `Opens today at ${formatTime12(todayHour.open)}`,
+      today: dayName,
+      todayHour,
+    };
+  } else {
+    return {
+      isOpen: false,
+      text: `Closed for today (closed at ${formatTime12(todayHour.close)})`,
+      today: dayName,
+      todayHour,
+    };
+  }
+}
 
 export const TIMEZONES = [
   "Asia/Kolkata",

@@ -37,9 +37,13 @@ import {
   reviewRow,
   staffRow,
   serviceRow,
+  addonRow,
   galleryRow,
   bookingRow,
+  giftCardConfigRow,
+  giftCardRow,
 } from "../serializers";
+import { sendWhatsAppReminder, generateWhatsAppReminderMessage, generateWhatsAppClickUrl, formatWhatsAppPhone } from "../whatsapp";
 
 const router = Router();
 router.use(requireAuth);
@@ -694,6 +698,103 @@ router.post("/me/services/reorder", (req, res, next) => {
   }
 });
 
+/* Service Add-ons */
+router.post("/me/addons", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const name = cleanText(req.body?.name, 100);
+    if (!name) throw new ApiError(400, "Add-on name is required.", "invalid_name");
+
+    const max = db.prepare("SELECT MAX(sort_order) AS m FROM service_addons WHERE salon_id = ?").get(salon.id) as { m: number | null };
+    const id = newId();
+    const now = nowIso();
+
+    db.prepare(
+      `INSERT INTO service_addons
+        (id, salon_id, name, description, price_cents, duration_minutes, is_active, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      id,
+      salon.id,
+      name,
+      cleanMultiline(req.body?.description, 1000),
+      toCents(req.body?.price),
+      Math.min(Math.max(Number(req.body?.durationMinutes) || 0, 0), 1440),
+      req.body?.isActive === false ? 0 : 1,
+      (max?.m ?? -1) + 1,
+      now,
+      now
+    );
+    touchSalon(salon.id);
+    const row = db.prepare("SELECT * FROM service_addons WHERE id = ?").get(id) as any;
+    res.status(201).json({ addon: addonRow(row) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/me/addons/:id", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const existing = assertOwnedResource("service_addons", req.params.id, salon.id);
+    const body = req.body ?? {};
+    const updates: { column: string; value: unknown }[] = [];
+    if (body.name !== undefined) {
+      const name = cleanText(body.name, 100);
+      if (!name) throw new ApiError(400, "Add-on name is required.", "invalid_name");
+      updates.push({ column: "name", value: name });
+    }
+    if (body.description !== undefined) updates.push({ column: "description", value: cleanMultiline(body.description, 1000) });
+    if (body.price !== undefined) updates.push({ column: "price_cents", value: toCents(body.price) });
+    if (body.durationMinutes !== undefined) {
+      updates.push({ column: "duration_minutes", value: Math.min(Math.max(Number(body.durationMinutes) || 0, 0), 1440) });
+    }
+    if (body.isActive !== undefined) updates.push({ column: "is_active", value: parseBoolean(body.isActive, true) ? 1 : 0 });
+    if (body.sortOrder !== undefined) updates.push({ column: "sort_order", value: Math.max(0, Number(body.sortOrder) || 0) });
+    if (updates.length) {
+      const setClause = updates.map((u) => `${u.column} = ?`).join(", ");
+      db.prepare(`UPDATE service_addons SET ${setClause}, updated_at = ? WHERE id = ?`).run(
+        ...updates.map((u) => u.value),
+        nowIso(),
+        existing.id
+      );
+      touchSalon(salon.id);
+    }
+    const row = db.prepare("SELECT * FROM service_addons WHERE id = ?").get(existing.id) as any;
+    res.json({ addon: addonRow(row) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/me/addons/:id", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    assertOwnedResource("service_addons", req.params.id, salon.id);
+    db.prepare("DELETE FROM service_addons WHERE id = ?").run(req.params.id);
+    touchSalon(salon.id);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/addons/reorder", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
+    const update = db.prepare("UPDATE service_addons SET sort_order = ? WHERE id = ? AND salon_id = ?");
+    const tx = db.transaction(() => {
+      ids.forEach((id, index) => update.run(index, id, salon.id));
+    });
+    tx();
+    touchSalon(salon.id);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/me/services/bulk", (req, res, next) => {
   try {
     const salon = ownerSalon(req);
@@ -1227,6 +1328,318 @@ router.delete("/me/domain", (req, res, next) => {
       "UPDATE salons SET custom_domain = NULL, custom_domain_verified = 0, domain_verify_token = NULL, updated_at = ? WHERE id = ?"
     ).run(nowIso(), salon.id);
     res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* WhatsApp 2-Hour Reminders                                           */
+/* ------------------------------------------------------------------ */
+
+router.get("/me/whatsapp-settings", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const logs = db
+      .prepare("SELECT * FROM whatsapp_reminders WHERE salon_id = ? ORDER BY sent_at DESC LIMIT 50")
+      .all(salon.id) as any[];
+
+    res.json({
+      enabled: salon.whatsapp_reminders_enabled !== 0,
+      leadHours: Number(salon.whatsapp_reminder_lead_hours) || 2,
+      customTemplate: salon.whatsapp_custom_template || "",
+      logs: logs.map((log) => ({
+        id: log.id,
+        bookingId: log.booking_id,
+        customerName: log.customer_name,
+        customerPhone: log.customer_phone,
+        serviceName: log.service_name,
+        appointmentDate: log.appointment_date,
+        appointmentTime: log.appointment_time,
+        messageBody: log.message_body,
+        status: log.status,
+        sentAt: log.sent_at,
+        errorMessage: log.error_message,
+        waUrl: generateWhatsAppClickUrl(log.customer_phone, log.message_body),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/me/whatsapp-settings", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const body = req.body ?? {};
+    const updates: { col: string; val: any }[] = [];
+
+    if (body.enabled !== undefined) {
+      updates.push({ col: "whatsapp_reminders_enabled", val: parseBoolean(body.enabled, true) ? 1 : 0 });
+    }
+    if (body.leadHours !== undefined) {
+      const hours = Math.min(Math.max(Number(body.leadHours) || 2, 1), 24);
+      updates.push({ col: "whatsapp_reminder_lead_hours", val: hours });
+    }
+    if (body.customTemplate !== undefined) {
+      updates.push({ col: "whatsapp_custom_template", val: cleanMultiline(body.customTemplate, 1000) });
+    }
+
+    if (updates.length) {
+      const setClause = updates.map((u) => `${u.col} = ?`).join(", ");
+      db.prepare(`UPDATE salons SET ${setClause}, updated_at = ? WHERE id = ?`).run(
+        ...updates.map((u) => u.val),
+        nowIso(),
+        salon.id
+      );
+      touchSalon(salon.id);
+    }
+
+    const updated = ownerSalon(req);
+    res.json({
+      enabled: updated.whatsapp_reminders_enabled !== 0,
+      leadHours: Number(updated.whatsapp_reminder_lead_hours) || 2,
+      customTemplate: updated.whatsapp_custom_template || "",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/bookings/:id/send-whatsapp-reminder", async (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const booking = assertOwnedResource("bookings", req.params.id, salon.id);
+
+    const payload = {
+      salon: {
+        id: salon.id,
+        name: salon.name,
+        phone: salon.phone,
+        address: salon.address,
+        city: salon.city,
+        slug: salon.slug,
+        currency: salon.currency,
+        timezone: salon.timezone,
+        whatsappRemindersEnabled: salon.whatsapp_reminders_enabled !== 0,
+        whatsappCustomTemplate: salon.whatsapp_custom_template || "",
+      },
+      booking: {
+        id: booking.id,
+        customerName: booking.customer_name,
+        customerPhone: booking.customer_phone,
+        serviceName: booking.service_name,
+        staffName: booking.staff_name,
+        date: booking.date,
+        time: booking.time,
+        price: Math.round(booking.price_cents || 0) / 100,
+      },
+    };
+
+    const result = await sendWhatsAppReminder(payload, "manual");
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/whatsapp/test", async (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const phone = cleanText(req.body?.phone, 30);
+    if (!phone) throw new ApiError(400, "Enter a valid recipient phone number.", "invalid_phone");
+
+    const payload = {
+      salon: {
+        id: salon.id,
+        name: salon.name,
+        phone: salon.phone,
+        address: salon.address,
+        city: salon.city,
+        slug: salon.slug,
+        currency: salon.currency,
+        timezone: salon.timezone,
+        whatsappRemindersEnabled: salon.whatsapp_reminders_enabled !== 0,
+        whatsappCustomTemplate: salon.whatsapp_custom_template || "",
+      },
+      booking: {
+        id: "test-booking-id",
+        customerName: "Jane Doe",
+        customerPhone: phone,
+        serviceName: "Signature Hair & Styling",
+        staffName: "Senior Stylist",
+        date: new Date().toISOString().slice(0, 10),
+        time: "14:00",
+        price: 150,
+      },
+    };
+
+    const result = await sendWhatsAppReminder(payload, "manual");
+    res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Gift Cards                                                         */
+/* ------------------------------------------------------------------ */
+
+function generateGiftCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const p1 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  const p2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `GIFT-${p1}-${p2}`;
+}
+
+router.get("/me/gift-cards/config", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const config = giftCardConfigRow(salon.id);
+    const cards = (
+      db
+        .prepare("SELECT * FROM gift_cards WHERE salon_id = ? ORDER BY created_at DESC")
+        .all(salon.id) as any[]
+    ).map(giftCardRow);
+
+    res.json({ config, cards });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/me/gift-cards/config", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    // Ensure config exists
+    giftCardConfigRow(salon.id);
+
+    const body = req.body ?? {};
+    const updates: { col: string; val: any }[] = [];
+
+    if (body.enabled !== undefined) {
+      updates.push({ col: "enabled", val: parseBoolean(body.enabled, true) ? 1 : 0 });
+    }
+    if (Array.isArray(body.denominations)) {
+      const cleanDenoms = body.denominations
+        .map((d: any) => Math.max(1, Math.round(Number(d) || 0)))
+        .filter((d: number) => d > 0);
+      updates.push({ col: "denominations_json", val: JSON.stringify(cleanDenoms.length ? cleanDenoms : [50, 100, 200]) });
+    }
+    if (body.headline !== undefined) {
+      updates.push({ col: "headline", val: cleanText(body.headline, 120) || "The Gift of Luxury & Beauty" });
+    }
+    if (body.message !== undefined) {
+      updates.push({ col: "message", val: cleanMultiline(body.message, 500) });
+    }
+    if (body.cardStyle !== undefined) {
+      const allowed = ["gold_foil", "minimal_dark", "silk_blush", "emerald_velvet"];
+      if (allowed.includes(body.cardStyle)) {
+        updates.push({ col: "card_style", val: body.cardStyle });
+      }
+    }
+    if (body.customBgColor !== undefined && isHexColor(body.customBgColor)) {
+      updates.push({ col: "custom_bg_color", val: body.customBgColor });
+    }
+    if (body.customAccentColor !== undefined && isHexColor(body.customAccentColor)) {
+      updates.push({ col: "custom_accent_color", val: body.customAccentColor });
+    }
+    if (body.expiryMonths !== undefined) {
+      const months = Math.min(Math.max(Number(body.expiryMonths) || 12, 1), 60);
+      updates.push({ col: "expiry_months", val: months });
+    }
+
+    if (updates.length) {
+      const setClause = updates.map((u) => `${u.col} = ?`).join(", ");
+      db.prepare(`UPDATE gift_card_configs SET ${setClause}, updated_at = ? WHERE salon_id = ?`).run(
+        ...updates.map((u) => u.val),
+        nowIso(),
+        salon.id
+      );
+      touchSalon(salon.id);
+    }
+
+    res.json({ config: giftCardConfigRow(salon.id) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/gift-cards/issue", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const config = giftCardConfigRow(salon.id);
+
+    const amount = Number(req.body?.amount) || 0;
+    if (amount <= 0) throw new ApiError(400, "Enter a valid gift card amount.", "invalid_amount");
+
+    const purchaserName = cleanText(req.body?.purchaserName, 100) || "Salon Owner";
+    const purchaserEmail = cleanText(req.body?.purchaserEmail, 100) || salon.email || "owner@salon.com";
+    const recipientName = cleanText(req.body?.recipientName, 100);
+    if (!recipientName) throw new ApiError(400, "Recipient name is required.", "invalid_recipient");
+    const recipientEmail = cleanText(req.body?.recipientEmail, 100);
+    const personalMessage = cleanMultiline(req.body?.personalMessage, 500);
+
+    const amountCents = toCents(amount);
+    const code = generateGiftCode();
+    const id = newId();
+    const now = nowIso();
+
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + (config.expiryMonths || 12));
+    const expiresAt = expiryDate.toISOString();
+
+    db.prepare(
+      `INSERT INTO gift_cards
+        (id, salon_id, code, amount_cents, balance_cents, purchaser_name, purchaser_email, recipient_name, recipient_email, personal_message, status, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`
+    ).run(
+      id,
+      salon.id,
+      code,
+      amountCents,
+      amountCents,
+      purchaserName,
+      purchaserEmail,
+      recipientName,
+      recipientEmail,
+      personalMessage,
+      now,
+      expiresAt
+    );
+
+    const row = db.prepare("SELECT * FROM gift_cards WHERE id = ?").get(id);
+    res.status(201).json({ card: giftCardRow(row) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/gift-cards/:id/redeem", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const cardRow = db.prepare("SELECT * FROM gift_cards WHERE id = ? AND salon_id = ?").get(req.params.id, salon.id) as any;
+    if (!cardRow) throw new ApiError(404, "Gift card not found.", "not_found");
+
+    const redeemAmount = Number(req.body?.amount) || 0;
+    if (redeemAmount <= 0) throw new ApiError(400, "Enter a valid redemption amount.", "invalid_amount");
+
+    const currentBalance = Math.round(cardRow.balance_cents) / 100;
+    if (redeemAmount > currentBalance) {
+      throw new ApiError(400, `Redemption amount exceeds remaining balance (${currentBalance}).`, "exceeds_balance");
+    }
+
+    const newBalanceCents = cardRow.balance_cents - toCents(redeemAmount);
+    const newStatus = newBalanceCents === 0 ? "redeemed" : "active";
+
+    db.prepare("UPDATE gift_cards SET balance_cents = ?, status = ? WHERE id = ?").run(
+      newBalanceCents,
+      newStatus,
+      cardRow.id
+    );
+
+    const updated = db.prepare("SELECT * FROM gift_cards WHERE id = ?").get(cardRow.id);
+    res.json({ card: giftCardRow(updated) });
   } catch (error) {
     next(error);
   }

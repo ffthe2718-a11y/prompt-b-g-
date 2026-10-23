@@ -16,6 +16,9 @@ import {
   Phone,
   Search,
   X,
+  MessageSquare,
+  MessageCircle,
+  ExternalLink,
 } from "lucide-react";
 import {
   BookingBadge,
@@ -26,6 +29,7 @@ import {
   inputClass,
   SavingButton,
 } from "@/components/dashboard/ui";
+import WhatsAppAutomationModal from "@/components/owner/WhatsAppAutomationModal";
 import { cn } from "@/lib/utils";
 
 const STATUS_TABS: { id: BookingStatus | "all"; label: string }[] = [
@@ -80,6 +84,23 @@ export default function Bookings({
   const [to, setTo] = useState("");
   const [detail, setDetail] = useState<Booking | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+
+  const sendWhatsAppReminder = async (booking: Booking) => {
+    setBusyId(booking.id);
+    try {
+      const result = await salonApi.sendWhatsAppReminder(booking.id);
+      toast.success("WhatsApp reminder generated!");
+      if (result.waUrl) {
+        window.open(result.waUrl, "_blank");
+      }
+      await refresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Could not send WhatsApp reminder.");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const sorted = useMemo(
     () =>
@@ -198,12 +219,20 @@ export default function Bookings({
           title="Bookings"
           description="Every appointment request from your website lands here. Confirm, complete or cancel — clients are notified by email when you change a status."
           action={
-            <button
-              onClick={exportCsv}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              <Download className="h-3.5 w-3.5" /> Export CSV
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setWhatsappModalOpen(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-400 transition-colors hover:bg-emerald-500/20"
+              >
+                <MessageSquare className="h-3.5 w-3.5" /> WhatsApp 2h Reminders
+              </button>
+              <button
+                onClick={exportCsv}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Download className="h-3.5 w-3.5" /> Export CSV
+              </button>
+            </div>
           }
         />
         <div className="mt-5 grid grid-cols-3 gap-2">
@@ -299,6 +328,11 @@ export default function Bookings({
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-[12px] font-semibold text-foreground">{booking.customerName}</p>
                       <BookingBadge status={booking.status} />
+                      {booking.whatsappReminderSentAt && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[8px] font-bold text-emerald-300">
+                          <MessageCircle className="h-2.5 w-2.5" /> WA 2h Reminded
+                        </span>
+                      )}
                       {relativeDay(booking.date) && (
                         <span className="text-[8px] uppercase tracking-[0.1em] text-primary">{relativeDay(booking.date)}</span>
                       )}
@@ -335,6 +369,14 @@ export default function Bookings({
                       </button>
                     )}
                     <button
+                      onClick={() => void sendWhatsAppReminder(booking)}
+                      disabled={busyId === booking.id}
+                      title="Send WhatsApp Reminder"
+                      className="inline-flex h-7 items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 text-[8px] font-bold uppercase tracking-[0.1em] text-emerald-400 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
+                    >
+                      <MessageCircle className="h-3 w-3" /> WA
+                    </button>
+                    <button
                       onClick={() => setDetail(booking)}
                       className="flex h-7 items-center gap-1 rounded-lg border border-border px-2.5 text-[8px] font-bold uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
                     >
@@ -362,13 +404,22 @@ export default function Bookings({
               >
                 Close
               </button>
+              {["pending", "confirmed"].includes(detail.status) && (
+                <button
+                  onClick={() => void sendWhatsAppReminder(detail)}
+                  disabled={busyId === detail.id}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp 2h Reminder
+                </button>
+              )}
               {["pending", "confirmed"].includes(detail.status) && detail.customerEmail && (
                 <button
                   onClick={() => void sendReminder(detail)}
                   disabled={busyId === detail.id}
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-[9px] font-bold uppercase tracking-[0.14em] text-foreground disabled:opacity-50"
                 >
-                  <BellRing className="h-3 w-3" /> Send reminder
+                  <BellRing className="h-3 w-3" /> Email reminder
                 </button>
               )}
               {detail.status === "cancelled" && (
@@ -412,6 +463,11 @@ export default function Bookings({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <BookingBadge status={detail.status} />
+              {detail.whatsappReminderSentAt && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[9px] font-bold text-emerald-300">
+                  <MessageCircle className="h-3 w-3" /> WhatsApp 2h Reminded
+                </span>
+              )}
               <span className="text-[11px] font-medium text-foreground">{formatPrice(detail.price, salon.currency)}</span>
             </div>
 
@@ -451,6 +507,13 @@ export default function Bookings({
           </div>
         )}
       </Modal>
+
+      {/* WhatsApp Automation & Simulator Modal */}
+      <WhatsAppAutomationModal
+        open={whatsappModalOpen}
+        onClose={() => setWhatsappModalOpen(false)}
+        salonName={salon.name}
+      />
     </div>
   );
 }

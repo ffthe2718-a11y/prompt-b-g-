@@ -113,6 +113,19 @@ db.exec(`
     updated_at       TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS service_addons (
+    id               TEXT PRIMARY KEY,
+    salon_id         TEXT NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+    name             TEXT NOT NULL,
+    description      TEXT NOT NULL DEFAULT '',
+    price_cents      INTEGER NOT NULL DEFAULT 0 CHECK (price_cents >= 0),
+    duration_minutes INTEGER NOT NULL DEFAULT 0 CHECK (duration_minutes >= 0),
+    is_active        INTEGER NOT NULL DEFAULT 1,
+    sort_order       INTEGER NOT NULL DEFAULT 0,
+    created_at       TEXT NOT NULL,
+    updated_at       TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS staff (
     id              TEXT PRIMARY KEY,
     salon_id        TEXT NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
@@ -233,8 +246,59 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS whatsapp_reminders (
+    id               TEXT PRIMARY KEY,
+    salon_id         TEXT NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+    booking_id       TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    customer_name    TEXT NOT NULL,
+    customer_phone   TEXT NOT NULL,
+    service_name     TEXT NOT NULL,
+    appointment_date TEXT NOT NULL,
+    appointment_time TEXT NOT NULL,
+    message_body     TEXT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'sent' CHECK (status IN ('sent', 'delivered', 'failed', 'scheduled')),
+    sent_at          TEXT NOT NULL,
+    error_message    TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS gift_card_configs (
+    salon_id            TEXT PRIMARY KEY REFERENCES salons(id) ON DELETE CASCADE,
+    enabled             INTEGER NOT NULL DEFAULT 1,
+    denominations_json  TEXT NOT NULL DEFAULT '[50, 100, 150, 250, 500]',
+    headline            TEXT NOT NULL DEFAULT 'The Gift of Luxury & Beauty',
+    message             TEXT NOT NULL DEFAULT 'Treat someone special to an unforgettable salon experience.',
+    card_style          TEXT NOT NULL DEFAULT 'gold_foil' CHECK (card_style IN ('gold_foil', 'minimal_dark', 'silk_blush', 'emerald_velvet')),
+    custom_bg_color     TEXT NOT NULL DEFAULT '#12110E',
+    custom_accent_color TEXT NOT NULL DEFAULT '#D4AF37',
+    expiry_months       INTEGER NOT NULL DEFAULT 12,
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS gift_cards (
+    id               TEXT PRIMARY KEY,
+    salon_id         TEXT NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+    code             TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    amount_cents     INTEGER NOT NULL CHECK (amount_cents > 0),
+    balance_cents    INTEGER NOT NULL CHECK (balance_cents >= 0),
+    purchaser_name   TEXT NOT NULL,
+    purchaser_email  TEXT NOT NULL,
+    recipient_name   TEXT NOT NULL,
+    recipient_email  TEXT NOT NULL DEFAULT '',
+    personal_message TEXT NOT NULL DEFAULT '',
+    status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'redeemed', 'expired')),
+    created_at       TEXT NOT NULL,
+    expires_at       TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_salon ON whatsapp_reminders(salon_id, sent_at);
+  CREATE INDEX IF NOT EXISTS idx_whatsapp_reminders_booking ON whatsapp_reminders(booking_id);
+  CREATE INDEX IF NOT EXISTS idx_gift_cards_salon ON gift_cards(salon_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_gift_cards_code ON gift_cards(code);
+
   CREATE INDEX IF NOT EXISTS idx_salons_status ON salons(status);
   CREATE INDEX IF NOT EXISTS idx_services_salon ON services(salon_id, sort_order);
+  CREATE INDEX IF NOT EXISTS idx_service_addons_salon ON service_addons(salon_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_staff_salon ON staff(salon_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_gallery_salon ON gallery(salon_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_bookings_salon_date ON bookings(salon_id, date);
@@ -260,6 +324,9 @@ ensureColumn("salons", "twitter", "TEXT NOT NULL DEFAULT ''");
 ensureColumn("salons", "custom_domain_verified", "INTEGER NOT NULL DEFAULT 0");
 ensureColumn("salons", "domain_verify_token", "TEXT");
 ensureColumn("salons", "published_json", "TEXT");
+ensureColumn("salons", "whatsapp_reminders_enabled", "INTEGER NOT NULL DEFAULT 1");
+ensureColumn("salons", "whatsapp_reminder_lead_hours", "INTEGER NOT NULL DEFAULT 2");
+ensureColumn("salons", "whatsapp_custom_template", "TEXT NOT NULL DEFAULT ''");
 ensureColumn("users", "google_id", "TEXT");
 ensureColumn("users", "avatar_url", "TEXT NOT NULL DEFAULT ''");
 ensureColumn("users", "status", "TEXT NOT NULL DEFAULT 'active'");
@@ -280,6 +347,8 @@ ensureColumn("salons", "approved_at", "TEXT");
 ensureColumn("salons", "approved_hash", "TEXT");
 ensureColumn("salons", "reviewed_at", "TEXT");
 ensureColumn("salons", "reviewed_by", "TEXT");
+ensureColumn("bookings", "addon_ids_json", "TEXT NOT NULL DEFAULT '[]'");
+ensureColumn("bookings", "whatsapp_reminder_sent_at", "TEXT");
 
 /* Indexes must come after ensureColumn(): on older databases the column
    does not exist yet when the schema block runs. */

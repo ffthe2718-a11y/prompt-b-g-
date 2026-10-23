@@ -212,14 +212,42 @@ export default function Onboarding() {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [draft, setDraft] = useState<Draft>(() => {
     let stored: TemplateId | null = null;
+    let storedPrimary: string | null = null;
+    let storedAccent: string | null = null;
+    let storedName: string | null = null;
     try {
       stored = sessionStorage.getItem("velvet_template") as TemplateId | null;
+      storedPrimary = sessionStorage.getItem("velvet_primary");
+      storedAccent = sessionStorage.getItem("velvet_accent");
+      storedName = sessionStorage.getItem("velvet_name");
       if (stored) sessionStorage.removeItem("velvet_template");
+      if (storedPrimary) sessionStorage.removeItem("velvet_primary");
+      if (storedAccent) sessionStorage.removeItem("velvet_accent");
+      if (storedName) sessionStorage.removeItem("velvet_name");
     } catch {
       /* noop */
     }
     const template = (templateParam || stored || "luxury") as TemplateId;
-    return initialDraft(TEMPLATE_PRESETS[template] ? template : "luxury");
+    const base = initialDraft(TEMPLATE_PRESETS[template] ? template : "luxury");
+    const nameParam = params.get("name") || storedName;
+    const primaryParam = params.get("primary") || storedPrimary;
+    const accentParam = params.get("accent") || storedAccent;
+    const taglineParam = params.get("tagline");
+
+    if (nameParam && nameParam.trim()) {
+      base.name = nameParam.trim();
+      base.slug = slugify(nameParam.trim());
+    }
+    if (primaryParam && isHexColor(primaryParam)) {
+      base.primaryColor = primaryParam;
+    }
+    if (accentParam && isHexColor(accentParam)) {
+      base.accentColor = accentParam;
+    }
+    if (taglineParam && taglineParam.trim()) {
+      base.tagline = taglineParam.trim();
+    }
+    return base;
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [slugState, setSlugState] = useState<{ status: "idle" | "checking" | "available" | "taken" | "invalid"; message: string }>({
