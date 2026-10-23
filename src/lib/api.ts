@@ -247,6 +247,24 @@ export const salonApi = {
   async reorderServices(ids: string[]) {
     return request<{ success: boolean }>("/salons/me/services/reorder", { method: "POST", body: { ids } });
   },
+  async bulkUpdateServices(payload: {
+    ids: string[];
+    isActive?: boolean;
+    priceAction?: "set" | "increase_percent" | "decrease_percent" | "increase_flat" | "decrease_flat";
+    priceValue?: number;
+    category?: string;
+  }) {
+    return request<{ success: boolean; count: number }>("/salons/me/services/bulk", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async bulkDeleteServices(ids: string[]) {
+    return request<{ success: boolean; count: number }>("/salons/me/services/bulk-delete", {
+      method: "POST",
+      body: { ids },
+    });
+  },
 
   /* Staff */
   async createStaff(payload: {

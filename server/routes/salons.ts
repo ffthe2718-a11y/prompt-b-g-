@@ -693,6 +693,92 @@ router.post("/me/services/reorder", (req, res, next) => {
   }
 });
 
+router.post("/me/services/bulk", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
+    if (!ids.length) {
+      throw new ApiError(400, "Select at least one service to update.", "no_services_selected");
+    }
+
+    const {
+      isActive,
+      priceAction,
+      priceValue,
+      category,
+    } = req.body ?? {};
+
+    const placeholders = ids.map(() => "?").join(",");
+    const existingServices = db
+      .prepare(`SELECT * FROM services WHERE salon_id = ? AND id IN (${placeholders})`)
+      .all(salon.id, ...ids) as any[];
+
+    if (!existingServices.length) {
+      throw new ApiError(404, "None of the selected services were found.", "not_found");
+    }
+
+    const now = nowIso();
+    const updateStmt = db.prepare(
+      `UPDATE services SET
+        price_cents = ?,
+        is_active = ?,
+        category = ?,
+        updated_at = ?
+       WHERE id = ? AND salon_id = ?`
+    );
+
+    const tx = db.transaction(() => {
+      for (const s of existingServices) {
+        let newPriceCents = s.price_cents;
+        if (priceAction === "set" && priceValue !== undefined && priceValue !== null && String(priceValue).trim() !== "") {
+          newPriceCents = toCents(priceValue);
+        } else if (priceAction === "increase_percent" && priceValue !== undefined && priceValue !== null && String(priceValue).trim() !== "") {
+          const factor = 1 + Math.max(0, Number(priceValue) || 0) / 100;
+          newPriceCents = Math.round(s.price_cents * factor);
+        } else if (priceAction === "decrease_percent" && priceValue !== undefined && priceValue !== null && String(priceValue).trim() !== "") {
+          const factor = Math.max(0, 1 - Math.max(0, Number(priceValue) || 0) / 100);
+          newPriceCents = Math.max(0, Math.round(s.price_cents * factor));
+        } else if (priceAction === "increase_flat" && priceValue !== undefined && priceValue !== null && String(priceValue).trim() !== "") {
+          newPriceCents = Math.max(0, s.price_cents + toCents(priceValue));
+        } else if (priceAction === "decrease_flat" && priceValue !== undefined && priceValue !== null && String(priceValue).trim() !== "") {
+          newPriceCents = Math.max(0, s.price_cents - toCents(priceValue));
+        }
+
+        const newIsActive = typeof isActive === "boolean" ? (isActive ? 1 : 0) : s.is_active;
+        const newCategory = category !== undefined && category !== null && String(category).trim() !== ""
+          ? cleanText(category, 60)
+          : s.category;
+
+        updateStmt.run(newPriceCents, newIsActive, newCategory, now, s.id, salon.id);
+      }
+    });
+
+    tx();
+    touchSalon(salon.id);
+    res.json({ success: true, count: existingServices.length });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/services/bulk-delete", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
+    if (!ids.length) {
+      throw new ApiError(400, "Select at least one service to delete.", "no_services_selected");
+    }
+    const placeholders = ids.map(() => "?").join(",");
+    const info = db
+      .prepare(`DELETE FROM services WHERE salon_id = ? AND id IN (${placeholders})`)
+      .run(salon.id, ...ids);
+    touchSalon(salon.id);
+    res.json({ success: true, count: info.changes });
+  } catch (error) {
+    next(error);
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /* Staff                                                               */
 /* ------------------------------------------------------------------ */
