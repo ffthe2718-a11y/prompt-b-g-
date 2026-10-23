@@ -330,8 +330,25 @@ export const salonApi = {
   async listReviews() {
     return request<{ reviews: Review[] }>("/salons/me/reviews");
   },
+  async createReview(payload: {
+    authorName: string;
+    authorEmail?: string;
+    rating: number;
+    title?: string;
+    comment: string;
+    status?: "published" | "hidden";
+    ownerReply?: string;
+  }) {
+    return request<{ review: Review }>("/salons/me/reviews", { method: "POST", body: payload });
+  },
   async updateReview(id: string, patch: { status?: "published" | "hidden"; ownerReply?: string }) {
     return request<{ review: Review }>(`/salons/me/reviews/${id}`, { method: "PATCH", body: patch });
+  },
+  async bulkUpdateReviews(payload: { ids: string[]; status: "published" | "hidden" }) {
+    return request<{ success: boolean; count: number }>("/salons/me/reviews/bulk", {
+      method: "POST",
+      body: payload,
+    });
   },
   async deleteReview(id: string) {
     return request<{ success: boolean }>(`/salons/me/reviews/${id}`, { method: "DELETE" });
@@ -587,6 +604,7 @@ export type SalonUpdatePayload = Partial<
     | "instagram"
     | "facebook"
     | "tiktok"
+    | "twitter"
     | "website"
     | "currency"
     | "timezone"

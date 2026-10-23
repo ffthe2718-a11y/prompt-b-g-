@@ -5,8 +5,10 @@ import {
   ArrowUp,
   Check,
   ExternalLink,
+  Facebook,
   Globe2,
   Image as ImageIcon,
+  Instagram,
   Link2,
   Loader2,
   LockKeyhole,
@@ -15,11 +17,12 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Twitter,
   Unlink,
 } from "lucide-react";
 import type { PlatformConfig, Salon, TemplateId } from "@/types/salon";
 import { readiness, type SiteForm } from "@/pages/owner/websiteForm";
-import { CURRENCIES, TEMPLATE_PRESETS, TIMEZONES, isHexColor } from "@/lib/salonUi";
+import { CURRENCIES, TEMPLATE_PRESETS, TIMEZONES, isHexColor, instagramUrl, facebookUrl, twitterUrl, tiktokUrl } from "@/lib/salonUi";
 import { publicApi, resolveSiteUrl, resolveSubdomainUrl, salonApi } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -453,55 +456,181 @@ export default function WebsiteEditor({
       )}
 
       {tab === "contact" && (
-        <Panel>
-          <SectionHeading title="Contact details" description="These power your contact links, map directions and booking notifications." />
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <Field label="Phone number">
-              <input value={form.phone} onChange={(event) => update("phone", event.target.value)} className={inputClass} inputMode="tel" />
-            </Field>
-            <Field label="WhatsApp" hint="Leave blank to use your phone number.">
-              <input value={form.whatsapp} onChange={(event) => update("whatsapp", event.target.value)} className={inputClass} inputMode="tel" />
-            </Field>
-            <Field label="Contact email">
-              <input value={form.email} onChange={(event) => update("email", event.target.value)} type="email" className={inputClass} />
-            </Field>
-            <Field label="Website (optional)">
-              <input value={form.website} onChange={(event) => update("website", event.target.value)} placeholder="https://" className={inputClass} />
-            </Field>
-            <Field label="Instagram handle">
-              <div className="flex items-center rounded-xl border border-border bg-background px-3">
-                <span className="text-xs text-muted-foreground">@</span>
-                <input
-                  value={form.instagram}
-                  onChange={(event) => update("instagram", event.target.value.replace(/^@/, ""))}
-                  className="h-10 w-full bg-transparent pl-1.5 text-sm text-foreground outline-none"
-                />
+        <div className="space-y-6">
+          <Panel>
+            <SectionHeading
+              title="Social media integration"
+              description="Connect your social profiles. Links to Instagram, Facebook, and Twitter will automatically appear as clickable icons on your public website footer."
+            />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Instagram" hint="Enter handle (e.g. yoursalon) or profile link">
+                <div className="flex items-center rounded-xl border border-border bg-background px-3 focus-within:border-primary">
+                  <Instagram className="mr-2 h-4 w-4 shrink-0 text-pink-500" />
+                  <span className="mr-1 text-xs text-muted-foreground">@</span>
+                  <input
+                    value={form.instagram}
+                    onChange={(event) => update("instagram", event.target.value.replace(/^@/, ""))}
+                    placeholder="yoursalon"
+                    className="h-10 w-full bg-transparent text-sm text-foreground outline-none"
+                  />
+                  {form.instagram && (
+                    <a
+                      href={instagramUrl(form.instagram)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+                      title="Test Instagram link"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </Field>
+
+              <Field label="Facebook" hint="Enter page name or facebook.com link">
+                <div className="flex items-center rounded-xl border border-border bg-background px-3 focus-within:border-primary">
+                  <Facebook className="mr-2 h-4 w-4 shrink-0 text-blue-500" />
+                  <input
+                    value={form.facebook}
+                    onChange={(event) => update("facebook", event.target.value.replace(/^@/, ""))}
+                    placeholder="yoursalon or page name"
+                    className="h-10 w-full bg-transparent text-sm text-foreground outline-none"
+                  />
+                  {form.facebook && (
+                    <a
+                      href={facebookUrl(form.facebook)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+                      title="Test Facebook link"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </Field>
+
+              <Field label="Twitter / X" hint="Enter handle (e.g. yoursalon) or twitter.com / x.com link">
+                <div className="flex items-center rounded-xl border border-border bg-background px-3 focus-within:border-primary">
+                  <Twitter className="mr-2 h-4 w-4 shrink-0 text-sky-400" />
+                  <span className="mr-1 text-xs text-muted-foreground">@</span>
+                  <input
+                    value={form.twitter}
+                    onChange={(event) => update("twitter", event.target.value.replace(/^@/, ""))}
+                    placeholder="yoursalon"
+                    className="h-10 w-full bg-transparent text-sm text-foreground outline-none"
+                  />
+                  {form.twitter && (
+                    <a
+                      href={twitterUrl(form.twitter)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+                      title="Test Twitter link"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </Field>
+
+              <Field label="TikTok (optional)" hint="Enter handle without @">
+                <div className="flex items-center rounded-xl border border-border bg-background px-3 focus-within:border-primary">
+                  <span className="mr-2 text-xs font-bold text-muted-foreground">TT</span>
+                  <input
+                    value={form.tiktok}
+                    onChange={(event) => update("tiktok", event.target.value.replace(/^@/, ""))}
+                    placeholder="yoursalon"
+                    className="h-10 w-full bg-transparent text-sm text-foreground outline-none"
+                  />
+                  {form.tiktok && (
+                    <a
+                      href={tiktokUrl(form.tiktok)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+                      title="Test TikTok link"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </Field>
+            </div>
+
+            {/* Footer Icon Preview */}
+            <div className="mt-5 rounded-xl border border-border/70 bg-muted/30 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Website Footer Icons Preview</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    These icons will automatically appear in your public salon footer for your visitors.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {form.instagram && (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow-xs text-foreground" title="Instagram">
+                      <Instagram className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                  {form.facebook && (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow-xs text-foreground" title="Facebook">
+                      <Facebook className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                  {form.twitter && (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow-xs text-foreground" title="Twitter / X">
+                      <Twitter className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                  {form.tiktok && (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow-xs text-[10px] font-bold text-foreground" title="TikTok">
+                      TT
+                    </span>
+                  )}
+                  {!form.instagram && !form.facebook && !form.twitter && !form.tiktok && (
+                    <span className="text-xs italic text-muted-foreground">
+                      No social links added yet. Add Instagram, Facebook, or Twitter above to display icons.
+                    </span>
+                  )}
+                </div>
               </div>
-            </Field>
-            <Field label="Facebook handle">
-              <input value={form.facebook} onChange={(event) => update("facebook", event.target.value.replace(/^@/, ""))} className={inputClass} />
-            </Field>
-            <Field label="TikTok handle">
-              <input value={form.tiktok} onChange={(event) => update("tiktok", event.target.value.replace(/^@/, ""))} className={inputClass} />
-            </Field>
-            <div className="hidden sm:block" />
-            <Field label="Street address" className="sm:col-span-2">
-              <input value={form.address} onChange={(event) => update("address", event.target.value)} className={inputClass} />
-            </Field>
-            <Field label="City">
-              <input value={form.city} onChange={(event) => update("city", event.target.value)} className={inputClass} />
-            </Field>
-            <Field label="State / region">
-              <input value={form.state} onChange={(event) => update("state", event.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Postal code">
-              <input value={form.postalCode} onChange={(event) => update("postalCode", event.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Country">
-              <input value={form.country} onChange={(event) => update("country", event.target.value)} className={inputClass} />
-            </Field>
-          </div>
-        </Panel>
+            </div>
+          </Panel>
+
+          <Panel>
+            <SectionHeading title="Contact & Location" description="These power your contact links, map directions and booking notifications." />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Phone number">
+                <input value={form.phone} onChange={(event) => update("phone", event.target.value)} className={inputClass} inputMode="tel" />
+              </Field>
+              <Field label="WhatsApp" hint="Leave blank to use your phone number.">
+                <input value={form.whatsapp} onChange={(event) => update("whatsapp", event.target.value)} className={inputClass} inputMode="tel" />
+              </Field>
+              <Field label="Contact email">
+                <input value={form.email} onChange={(event) => update("email", event.target.value)} type="email" className={inputClass} />
+              </Field>
+              <Field label="Website (optional)">
+                <input value={form.website} onChange={(event) => update("website", event.target.value)} placeholder="https://" className={inputClass} />
+              </Field>
+              <Field label="Street address" className="sm:col-span-2">
+                <input value={form.address} onChange={(event) => update("address", event.target.value)} className={inputClass} />
+              </Field>
+              <Field label="City">
+                <input value={form.city} onChange={(event) => update("city", event.target.value)} className={inputClass} />
+              </Field>
+              <Field label="State / region">
+                <input value={form.state} onChange={(event) => update("state", event.target.value)} className={inputClass} />
+              </Field>
+              <Field label="Postal code">
+                <input value={form.postalCode} onChange={(event) => update("postalCode", event.target.value)} className={inputClass} />
+              </Field>
+              <Field label="Country">
+                <input value={form.country} onChange={(event) => update("country", event.target.value)} className={inputClass} />
+              </Field>
+            </div>
+          </Panel>
+        </div>
       )}
 
       {tab === "booking" && (

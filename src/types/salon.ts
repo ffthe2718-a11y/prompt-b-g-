@@ -124,6 +124,7 @@ export interface Salon {
   instagram: string;
   facebook: string;
   tiktok: string;
+  twitter: string;
   website: string;
   currency: string;
   timezone: string;

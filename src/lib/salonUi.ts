@@ -104,19 +104,36 @@ export function fullAddress(salon: Pick<Salon, "address" | "city" | "state" | "p
   return [salon.address, salon.city, salon.state, salon.postalCode, salon.country].filter(Boolean).join(", ");
 }
 
-export function instagramUrl(handle: string) {
-  const clean = String(handle || "").replace(/^@/, "").trim();
-  return clean ? `https://instagram.com/${clean}` : "";
+export function instagramUrl(handleOrUrl: string) {
+  const clean = String(handleOrUrl || "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
+  const handle = clean.replace(/^@/, "");
+  return handle ? `https://instagram.com/${handle}` : "";
 }
 
-export function facebookUrl(handle: string) {
-  const clean = String(handle || "").replace(/^@/, "").trim();
-  return clean ? `https://facebook.com/${clean}` : "";
+export function facebookUrl(handleOrUrl: string) {
+  const clean = String(handleOrUrl || "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
+  const handle = clean.replace(/^@/, "");
+  return handle ? `https://facebook.com/${handle}` : "";
 }
 
-export function tiktokUrl(handle: string) {
-  const clean = String(handle || "").replace(/^@/, "").trim();
-  return clean ? `https://tiktok.com/@${clean}` : "";
+export function twitterUrl(handleOrUrl: string) {
+  const clean = String(handleOrUrl || "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
+  const handle = clean.replace(/^@/, "");
+  return handle ? `https://twitter.com/${handle}` : "";
+}
+
+export function tiktokUrl(handleOrUrl: string) {
+  const clean = String(handleOrUrl || "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
+  const handle = clean.replace(/^@/, "");
+  return handle ? `https://tiktok.com/@${handle}` : "";
 }
 
 export function initials(name: string) {

@@ -28,6 +28,7 @@ export interface SiteForm {
   instagram: string;
   facebook: string;
   tiktok: string;
+  twitter: string;
   currency: string;
   timezone: string;
   template: TemplateId;
@@ -68,6 +69,7 @@ export function siteFormFromSalon(salon: Salon): SiteForm {
     instagram: salon.instagram,
     facebook: salon.facebook,
     tiktok: salon.tiktok,
+    twitter: salon.twitter || "",
     currency: salon.currency,
     timezone: salon.timezone,
     template: salon.template,
@@ -109,6 +111,7 @@ export function siteFormToPatch(form: SiteForm): SalonUpdatePayload & { sections
     instagram: form.instagram,
     facebook: form.facebook,
     tiktok: form.tiktok,
+    twitter: form.twitter,
     currency: form.currency,
     timezone: form.timezone,
     template: form.template,

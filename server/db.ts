@@ -63,6 +63,7 @@ db.exec(`
     instagram         TEXT NOT NULL DEFAULT '',
     facebook          TEXT NOT NULL DEFAULT '',
     tiktok            TEXT NOT NULL DEFAULT '',
+    twitter           TEXT NOT NULL DEFAULT '',
     website           TEXT NOT NULL DEFAULT '',
     currency          TEXT NOT NULL DEFAULT 'INR',
     timezone          TEXT NOT NULL DEFAULT 'Asia/Kolkata',
@@ -255,6 +256,7 @@ db.exec(`
 `);
 
 // Forward-compatible additions for deployments created before these fields existed.
+ensureColumn("salons", "twitter", "TEXT NOT NULL DEFAULT ''");
 ensureColumn("salons", "custom_domain_verified", "INTEGER NOT NULL DEFAULT 0");
 ensureColumn("salons", "domain_verify_token", "TEXT");
 ensureColumn("salons", "published_json", "TEXT");

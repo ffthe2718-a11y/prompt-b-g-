@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   CalendarDays,
   Clock,
+  Facebook,
   Instagram,
   Mail,
   MapPin,
@@ -13,6 +14,7 @@ import {
   Phone,
   Scissors,
   Star,
+  Twitter,
   X,
 } from "lucide-react";
 import type { Salon } from "@/types/salon";
@@ -25,6 +27,8 @@ import {
   fullAddress,
   initials,
   instagramUrl,
+  facebookUrl,
+  twitterUrl,
   mapsLink,
   whatsappLink,
 } from "@/lib/salonUi";
@@ -565,6 +569,28 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
                         style={{ borderColor: theme.border, color: theme.ink }}
                       >
                         <Instagram className="h-3.5 w-3.5" /> @{salon.instagram}
+                      </a>
+                    )}
+                    {salon.facebook && (
+                      <a
+                        href={facebookUrl(salon.facebook)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[8px] font-bold uppercase tracking-[0.14em]"
+                        style={{ borderColor: theme.border, color: theme.ink }}
+                      >
+                        <Facebook className="h-3.5 w-3.5" /> Facebook
+                      </a>
+                    )}
+                    {salon.twitter && (
+                      <a
+                        href={twitterUrl(salon.twitter)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[8px] font-bold uppercase tracking-[0.14em]"
+                        style={{ borderColor: theme.border, color: theme.ink }}
+                      >
+                        <Twitter className="h-3.5 w-3.5" /> @{salon.twitter}
                       </a>
                     )}
                   </div>

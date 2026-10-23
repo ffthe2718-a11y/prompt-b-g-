@@ -217,14 +217,15 @@ router.patch("/me", (req, res, next) => {
       instagram: { column: "instagram", max: 100 },
       facebook: { column: "facebook", max: 100 },
       tiktok: { column: "tiktok", max: 100 },
+      twitter: { column: "twitter", max: 100 },
     };
 
     for (const [key, config] of Object.entries(textFields)) {
       if (body[key] !== undefined) {
         let value = config.multiline ? cleanMultiline(body[key], config.max) : cleanText(body[key], config.max);
-        if (key === "instagram" || key === "facebook" || key === "tiktok") {
+        if (key === "instagram" || key === "facebook" || key === "tiktok" || key === "twitter") {
           value = value
-            .replace(/^https?:\/\/(www\.)?(instagram|facebook|tiktok)\.com\//i, "")
+            .replace(/^https?:\/\/(www\.)?(instagram|facebook|tiktok|twitter|x)\.com\//i, "")
             .replace(/^@/, "")
             .replace(/[/?#].*$/, "");
         }
@@ -1118,7 +1119,56 @@ router.delete("/me/reviews/:id", (req, res, next) => {
     const salon = ownerSalon(req);
     assertOwnedResource("reviews", req.params.id, salon.id);
     db.prepare("DELETE FROM reviews WHERE id = ?").run(req.params.id);
+    touchSalon(salon.id);
     res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/reviews", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const authorName = cleanText(req.body?.authorName, 80);
+    if (!authorName) throw new ApiError(400, "Client name is required.", "invalid_name");
+    const rating = Math.min(Math.max(Number(req.body?.rating) || 5, 1), 5);
+    const comment = cleanMultiline(req.body?.comment, 2000);
+    if (!comment) throw new ApiError(400, "Review or testimonial comment is required.", "invalid_comment");
+    const title = cleanText(req.body?.title, 120);
+    const email = cleanText(req.body?.authorEmail, 120);
+    const status = req.body?.status === "hidden" ? "hidden" : "published";
+    const ownerReply = cleanMultiline(req.body?.ownerReply, 1200);
+
+    const id = newId();
+    const now = nowIso();
+    db.prepare(
+      `INSERT INTO reviews (id, salon_id, author_name, author_email, rating, title, comment, status, owner_reply, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, salon.id, authorName, email, rating, title, comment, status, ownerReply, now, now);
+    touchSalon(salon.id);
+    const row = db.prepare("SELECT * FROM reviews WHERE id = ?").get(id) as any;
+    res.status(201).json({ review: reviewRow(row) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/reviews/bulk", (req, res, next) => {
+  try {
+    const salon = ownerSalon(req);
+    const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
+    if (!ids.length) throw new ApiError(400, "No reviews selected.", "no_reviews");
+    const { status } = req.body ?? {};
+    if (!["published", "hidden"].includes(status)) {
+      throw new ApiError(400, "Invalid status.", "invalid_status");
+    }
+    const placeholders = ids.map(() => "?").join(",");
+    const now = nowIso();
+    db.prepare(
+      `UPDATE reviews SET status = ?, updated_at = ? WHERE salon_id = ? AND id IN (${placeholders})`
+    ).run(status, now, salon.id, ...ids);
+    touchSalon(salon.id);
+    res.json({ success: true, count: ids.length });
   } catch (error) {
     next(error);
   }

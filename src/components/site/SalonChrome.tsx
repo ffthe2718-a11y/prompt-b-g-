@@ -14,11 +14,12 @@ import {
   Music2,
   Phone,
   Send,
+  Twitter,
   X,
 } from "lucide-react";
 import type { Salon } from "@/types/salon";
 import type { SiteTheme } from "@/components/site/theme";
-import { initials, fullAddress, mapsLink, instagramUrl, facebookUrl, tiktokUrl, whatsappLink } from "@/lib/salonUi";
+import { initials, fullAddress, mapsLink, instagramUrl, facebookUrl, twitterUrl, tiktokUrl, whatsappLink } from "@/lib/salonUi";
 import { publicApi } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -251,6 +252,7 @@ export function SalonFooter({ salon, theme }: { salon: Salon; theme: SiteTheme }
   const socials = [
     { url: instagramUrl(salon.instagram), icon: Instagram, label: "Instagram" },
     { url: facebookUrl(salon.facebook), icon: Facebook, label: "Facebook" },
+    { url: twitterUrl(salon.twitter), icon: Twitter, label: "Twitter" },
     { url: tiktokUrl(salon.tiktok), icon: Music2, label: "TikTok" },
     { url: salon.website, icon: Globe, label: "Website" },
   ].filter((item) => item.url);

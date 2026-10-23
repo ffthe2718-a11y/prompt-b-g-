@@ -193,6 +193,7 @@ export function publicSalonBundle(row: any, options: { includeReviews?: boolean 
     instagram: row.instagram,
     facebook: row.facebook,
     tiktok: row.tiktok,
+    twitter: row.twitter || "",
     website: row.website,
     currency: row.currency,
     timezone: row.timezone,

@@ -70,6 +70,7 @@ interface Draft {
   instagram: string;
   facebook: string;
   tiktok: string;
+  twitter: string;
   address: string;
   city: string;
   state: string;
@@ -105,6 +106,7 @@ function initialDraft(template: TemplateId): Draft {
     instagram: "",
     facebook: "",
     tiktok: "",
+    twitter: "",
     address: "",
     city: "",
     state: "",
@@ -146,6 +148,7 @@ function draftFromSalon(salon: Salon): Draft {
     instagram: salon.instagram,
     facebook: salon.facebook,
     tiktok: salon.tiktok,
+    twitter: salon.twitter || "",
     address: salon.address,
     city: salon.city,
     state: salon.state,
@@ -341,6 +344,7 @@ export default function Onboarding() {
     instagram: fields.instagram,
     facebook: fields.facebook,
     tiktok: fields.tiktok,
+    twitter: fields.twitter,
     address: fields.address,
     city: fields.city,
     state: fields.state,
@@ -461,6 +465,8 @@ export default function Onboarding() {
         email: draft.email,
         website: draft.website,
         instagram: draft.instagram,
+        facebook: draft.facebook,
+        twitter: draft.twitter,
         address: draft.address,
         city: draft.city,
         state: draft.state,
