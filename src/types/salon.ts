@@ -147,6 +147,7 @@ export interface Salon {
   sections: SectionConfig[];
   hours: DayHours[];
   bookingSettings: BookingSettings;
+  instagramFeed?: InstagramFeedConfig;
   seoTitle: string;
   seoDescription: string;
   status: SalonStatus;
@@ -489,4 +490,20 @@ export interface GiftCard {
   status: "active" | "redeemed" | "expired";
   createdAt: string;
   expiresAt: string;
+}
+
+export interface InstagramFeedPost {
+  id: string;
+  imageUrl: string;
+  caption: string;
+  likesCount: number;
+  commentsCount: number;
+  permalink?: string;
+}
+
+export interface InstagramFeedConfig {
+  title: string;
+  subtitle: string;
+  handle: string;
+  posts: InstagramFeedPost[];
 }

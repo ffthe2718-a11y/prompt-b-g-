@@ -6,7 +6,9 @@ import {
   ArrowUpRight,
   CalendarDays,
   Clock,
+  ExternalLink,
   Facebook,
+  Heart,
   Instagram,
   Mail,
   MapPin,
@@ -608,6 +610,141 @@ export default function SalonSite({ salon, preview = false }: { salon: Salon; pr
 
               {/* Column 2: Static Map Placeholder */}
               <LuxuryMapPlaceholder salon={salon} theme={theme} className="h-full min-h-[380px]" />
+            </div>
+          </section>
+        );
+      }
+
+      case "instagram": {
+        const handle = salon.instagramFeed?.handle || salon.instagram || "";
+        const title = salon.instagramFeed?.title || "Follow Us On Instagram";
+        const subtitle =
+          salon.instagramFeed?.subtitle ||
+          (handle ? `Latest transformations & stories @${handle.replace(/^@/, "")}` : "Behind the scenes & client transformations");
+
+        // Custom posts or fallback images
+        const customPosts = salon.instagramFeed?.posts || [];
+        const fallbackImages = salon.gallery.length > 0 ? salon.gallery.map((g) => g.imageUrl) : [salon.heroImageUrl, salon.aboutImageUrl].filter(Boolean);
+        const defaultSampleImages = [
+          "https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?q=80&w=800&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?q=80&w=800&auto=format&fit=crop",
+        ];
+
+        const displayPosts = customPosts.length > 0
+          ? customPosts
+          : Array.from({ length: 6 }).map((_, i) => ({
+              id: `sample-${i}`,
+              imageUrl: fallbackImages[i % fallbackImages.length] || defaultSampleImages[i % defaultSampleImages.length],
+              caption: i % 2 === 0 ? "Signature balayage & dimensional shine ✨" : "Luxe interior details for our weekend clients 🌿",
+              likesCount: 120 + i * 34,
+              commentsCount: 8 + i * 3,
+              permalink: handle ? instagramUrl(handle) : "",
+            }));
+
+        const profileLink = handle ? instagramUrl(handle) : "https://instagram.com";
+
+        return (
+          <section
+            key="instagram"
+            id="instagram"
+            className="scroll-mt-20 border-t py-16 sm:py-24"
+            style={{ borderColor: theme.border, backgroundColor: theme.bg }}
+          >
+            <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-8">
+              {/* Header */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="flex h-7 w-7 items-center justify-center rounded-full border text-amber-400"
+                      style={{ borderColor: theme.accent, backgroundColor: `${theme.accent}15` }}
+                    >
+                      <Instagram className="h-3.5 w-3.5" style={{ color: theme.accent }} />
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.32em]" style={{ color: theme.accent }}>
+                      {handle ? `@${handle.replace(/^@/, "")}` : "Instagram Feed"}
+                    </span>
+                  </div>
+                  <h2 className="mt-2 font-serif text-3xl leading-tight sm:text-4xl" style={{ color: theme.ink }}>
+                    {title}
+                  </h2>
+                  {subtitle && (
+                    <p className="mt-2 text-xs leading-relaxed" style={{ color: theme.muted }}>
+                      {subtitle}
+                    </p>
+                  )}
+                </div>
+
+                <a
+                  href={profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center gap-2 rounded-full border px-5 text-[9px] font-bold uppercase tracking-[0.18em] transition-transform hover:scale-[1.02]"
+                  style={{ borderColor: theme.border, color: theme.ink, backgroundColor: `${theme.accent}10` }}
+                >
+                  <Instagram className="h-3.5 w-3.5" style={{ color: theme.accent }} />
+                  {handle ? `Follow @${handle.replace(/^@/, "")}` : "View Instagram Profile"}
+                  <ExternalLink className="h-3 w-3 opacity-60" />
+                </a>
+              </div>
+
+              {/* Instagram Feed Grid */}
+              <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {displayPosts.map((post, index) => {
+                  const targetUrl = post.permalink || profileLink;
+                  return (
+                    <motion.div
+                      key={post.id || index}
+                      initial={{ opacity: 0, y: 12 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-30px" }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => {
+                        if (targetUrl) window.open(targetUrl, "_blank", "noopener,noreferrer");
+                        else setLightbox({ imageUrl: post.imageUrl, caption: post.caption });
+                      }}
+                      className="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-2xl"
+                      style={{ borderColor: theme.border }}
+                    >
+                      <img
+                        src={post.imageUrl}
+                        alt={post.caption || `Instagram post by ${salon.name}`}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-108"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 flex flex-col justify-between bg-black/65 p-3 text-white opacity-0 backdrop-blur-[2px] transition-opacity duration-300 group-hover:opacity-100">
+                        <div className="flex justify-end">
+                          <Instagram className="h-4 w-4 text-amber-300" />
+                        </div>
+
+                        {post.caption && (
+                          <p className="line-clamp-2 text-[10px] leading-tight text-white/90">
+                            {post.caption}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between border-t border-white/20 pt-2 text-[10px] font-semibold text-white/80">
+                          <span className="flex items-center gap-1 text-rose-300">
+                            <Heart className="h-3 w-3 fill-rose-300" />
+                            {post.likesCount || 120}
+                          </span>
+                          <span className="flex items-center gap-1 text-white/70">
+                            <MessageCircle className="h-3 w-3" />
+                            {post.commentsCount || 8}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </section>
         );

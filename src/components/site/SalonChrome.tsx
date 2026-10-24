@@ -42,6 +42,7 @@ const sectionLinks = [
   { id: "team", label: "Team" },
   { id: "gallery", label: "Gallery" },
   { id: "reviews", label: "Reviews" },
+  { id: "instagram", label: "Instagram" },
   { id: "contact", label: "Contact" },
 ];
 

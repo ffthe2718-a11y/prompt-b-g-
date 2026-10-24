@@ -39,6 +39,7 @@ export interface SiteForm {
   sections: SectionConfig[];
   hours: DayHours[];
   bookingSettings: Salon["bookingSettings"];
+  instagramFeed: NonNullable<Salon["instagramFeed"]>;
 }
 
 export function siteFormFromSalon(salon: Salon): SiteForm {
@@ -80,6 +81,12 @@ export function siteFormFromSalon(salon: Salon): SiteForm {
     sections: [...salon.sections].sort((a, b) => a.order - b.order),
     hours: salon.hours.map((hour) => ({ ...hour })),
     bookingSettings: { ...salon.bookingSettings },
+    instagramFeed: salon.instagramFeed || {
+      title: "Follow Us On Instagram",
+      subtitle: "Latest transformations & behind the scenes",
+      handle: salon.instagram || "",
+      posts: [],
+    },
   };
 }
 
@@ -122,6 +129,7 @@ export function siteFormToPatch(form: SiteForm): SalonUpdatePayload & { sections
     sections: form.sections,
     hours: form.hours,
     bookingSettings: form.bookingSettings,
+    instagramFeed: form.instagramFeed,
   };
 }
 

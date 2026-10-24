@@ -160,8 +160,9 @@ export const DEFAULT_SECTIONS = [
   { id: "team", label: "Team", enabled: true, order: 3 },
   { id: "gallery", label: "Gallery", enabled: true, order: 4 },
   { id: "reviews", label: "Reviews", enabled: true, order: 5 },
-  { id: "booking", label: "Booking", enabled: true, order: 6 },
-  { id: "contact", label: "Contact", enabled: true, order: 7 },
+  { id: "instagram", label: "Instagram Feed", enabled: true, order: 6 },
+  { id: "booking", label: "Booking", enabled: true, order: 7 },
+  { id: "contact", label: "Contact", enabled: true, order: 8 },
 ];
 
 export const TEMPLATES = new Set(["luxury", "blush", "noir", "emerald"]);

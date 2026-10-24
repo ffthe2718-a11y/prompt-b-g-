@@ -148,6 +148,17 @@ function hoursFor(row: any) {
   });
 }
 
+function instagramFeedFor(row: any) {
+  const saved = parseJson<Record<string, any>>(row.instagram_json, {});
+  const handle = saved.handle || row.instagram || "";
+  return {
+    title: saved.title || "Follow Us On Instagram",
+    subtitle: saved.subtitle || (handle ? `Latest transformations & stories @${handle.replace(/^@/, "")}` : "Latest transformations & stories"),
+    handle: handle,
+    posts: Array.isArray(saved.posts) ? saved.posts : [],
+  };
+}
+
 function bookingSettingsFor(row: any) {
   const saved = parseJson<Record<string, unknown>>(row.booking_json, {});
   const interval = Number(saved.slotIntervalMinutes);
@@ -223,6 +234,7 @@ export function publicSalonBundle(row: any, options: { includeReviews?: boolean 
     sections: sectionsFor(row),
     hours: hoursFor(row),
     bookingSettings: bookingSettingsFor(row),
+    instagramFeed: instagramFeedFor(row),
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
     status: row.status,
@@ -289,6 +301,7 @@ export function privateSalonBundle(row: any) {
     sections: sectionsFor(row),
     hours: hoursFor(row),
     bookingSettings: bookingSettingsFor(row),
+    instagramFeed: instagramFeedFor(row),
     services: services.map(serviceRow),
     addons: addons.map(addonRow),
     staff: staff.map(staffRow),

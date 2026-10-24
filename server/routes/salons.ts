@@ -289,6 +289,26 @@ router.patch("/me", (req, res, next) => {
       updates.push({ column: "accent_color", value: String(body.accentColor) });
     }
 
+    if (body.instagramFeed !== undefined) {
+      const feed = typeof body.instagramFeed === "object" && body.instagramFeed ? body.instagramFeed : {};
+      const cleanedFeed = {
+        title: cleanText(feed.title, 120) || "Follow Us On Instagram",
+        subtitle: cleanText(feed.subtitle, 240),
+        handle: cleanText(feed.handle || body.instagram, 100).replace(/^@/, ""),
+        posts: Array.isArray(feed.posts)
+          ? feed.posts.slice(0, 16).map((p: any) => ({
+              id: cleanText(p.id || newId(), 40),
+              imageUrl: safeImageUrl(p.imageUrl),
+              caption: cleanText(p.caption, 500),
+              likesCount: Math.max(0, Number(p.likesCount) || 0),
+              commentsCount: Math.max(0, Number(p.commentsCount) || 0),
+              permalink: safeLinkUrl(p.permalink),
+            }))
+          : [],
+      };
+      updates.push({ column: "instagram_json", value: JSON.stringify(cleanedFeed) });
+    }
+
     if (body.sections !== undefined) {
       if (!Array.isArray(body.sections)) throw new ApiError(400, "Sections must be a list.", "invalid_sections");
       const incoming = new Map<string, any>(body.sections.map((s: any) => [String(s?.id), s]));

@@ -319,6 +319,12 @@ db.exec(`
     WHERE staff_id IS NOT NULL AND status IN ('pending', 'confirmed');
 `);
 
+try {
+  db.exec("ALTER TABLE salons ADD COLUMN instagram_json TEXT NOT NULL DEFAULT '{}'");
+} catch {
+  // Column already exists
+}
+
 // Forward-compatible additions for deployments created before these fields existed.
 ensureColumn("salons", "twitter", "TEXT NOT NULL DEFAULT ''");
 ensureColumn("salons", "custom_domain_verified", "INTEGER NOT NULL DEFAULT 0");

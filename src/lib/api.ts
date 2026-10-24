@@ -764,6 +764,7 @@ export type SalonUpdatePayload = Partial<
   sections?: SectionConfig[];
   hours?: DayHours[];
   bookingSettings?: Salon["bookingSettings"];
+  instagramFeed?: Salon["instagramFeed"];
 };
 
 export function isApiError(error: unknown): error is ApiRequestError {

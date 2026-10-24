@@ -7,18 +7,23 @@ import {
   ExternalLink,
   Facebook,
   Globe2,
+  Heart,
   Image as ImageIcon,
   Instagram,
   Link2,
   Loader2,
   LockKeyhole,
+  MessageCircle,
   Palette,
+  Plus,
   Save,
   Search,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Twitter,
   Unlink,
+  X,
 } from "lucide-react";
 import type { PlatformConfig, Salon, TemplateId } from "@/types/salon";
 import { readiness, type SiteForm } from "@/pages/owner/websiteForm";
@@ -34,6 +39,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { id: "content", label: "Content", icon: Sparkles },
   { id: "design", label: "Look & feel", icon: Palette },
+  { id: "instagram", label: "Instagram Feed", icon: Instagram },
   { id: "contact", label: "Contact", icon: Globe2 },
   { id: "booking", label: "Hours & booking", icon: LockKeyhole },
   { id: "sections", label: "Sections", icon: ImageIcon },
@@ -73,8 +79,95 @@ export default function WebsiteEditor({
     setDomainInput(salon.customDomain || "");
   }, [salon.customDomain]);
 
+  // Instagram Feed State
+  const [showAddPost, setShowAddPost] = useState(false);
+  const [newPostImage, setNewPostImage] = useState("");
+  const [newPostCaption, setNewPostCaption] = useState("");
+  const [newPostLikes, setNewPostLikes] = useState("142");
+  const [newPostComments, setNewPostComments] = useState("18");
+  const [newPostLink, setNewPostLink] = useState("");
+
   const update = <K extends keyof SiteForm>(key: K, value: SiteForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const instagramSectionEnabled = form.sections.some((s) => s.id === "instagram" && s.enabled);
+
+  const handleToggleInstagramSection = (enabled: boolean) => {
+    update(
+      "sections",
+      form.sections.map((section) => (section.id === "instagram" ? { ...section, enabled } : section))
+    );
+  };
+
+  const handleAddInstagramPost = () => {
+    if (!newPostImage.trim()) {
+      toast.error("Please enter or upload an image for the post.");
+      return;
+    }
+    const newPost = {
+      id: "post-" + Date.now(),
+      imageUrl: newPostImage.trim(),
+      caption: newPostCaption.trim(),
+      likesCount: parseInt(newPostLikes, 10) || 120,
+      commentsCount: parseInt(newPostComments, 10) || 8,
+      permalink: newPostLink.trim(),
+    };
+    update("instagramFeed", {
+      ...form.instagramFeed,
+      posts: [newPost, ...form.instagramFeed.posts],
+    });
+    setShowAddPost(false);
+    setNewPostImage("");
+    setNewPostCaption("");
+    setNewPostLikes("142");
+    setNewPostComments("18");
+    setNewPostLink("");
+    toast.success("Added Instagram post to feed!");
+  };
+
+  const handleDeleteInstagramPost = (postId: string) => {
+    update("instagramFeed", {
+      ...form.instagramFeed,
+      posts: form.instagramFeed.posts.filter((p) => p.id !== postId),
+    });
+    toast.success("Removed post from Instagram feed.");
+  };
+
+  const handleAutoGenerateInstagramPosts = () => {
+    const galleryImages = salon.gallery.length > 0 ? salon.gallery.map((g) => g.imageUrl) : [];
+    const sampleImages = [
+      "https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?q=80&w=800&auto=format&fit=crop",
+    ];
+
+    const sampleCaptions = [
+      "Signature dimensional balayage with high-shine glass finish ✨ #VelvetSalon",
+      "Soft silk press & luxury hair treatment session for the weekend 🌿",
+      "Interior aesthetic check. Creating a calm oasis for our clients ✨",
+      "Custom color refresh & precision trim for our lovely client ✂️",
+      "Weekend glam styling vibes. Book your appointment online! 💫",
+      "Flawless bridal styling session in studio today 🤍",
+    ];
+
+    const generated = Array.from({ length: 6 }).map((_, i) => ({
+      id: `gen-${Date.now()}-${i}`,
+      imageUrl: galleryImages[i] || sampleImages[i],
+      caption: sampleCaptions[i],
+      likesCount: Math.floor(100 + Math.random() * 250),
+      commentsCount: Math.floor(6 + Math.random() * 25),
+      permalink: form.instagram ? instagramUrl(form.instagram) : "",
+    }));
+
+    update("instagramFeed", {
+      ...form.instagramFeed,
+      posts: generated,
+    });
+    toast.success("Generated 6 aesthetic Instagram posts!");
   };
 
   const updateHour = (index: number, patch: Partial<SiteForm["hours"][number]>) => {
@@ -452,6 +545,253 @@ export default function WebsiteEditor({
               />
             </Panel>
           </div>
+        </div>
+      )}
+
+      {tab === "instagram" && (
+        <div className="space-y-6">
+          <Panel>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
+              <div>
+                <SectionHeading
+                  title="Instagram Feed Section"
+                  description="Embed your latest Instagram posts feed directly on your salon home page."
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-foreground">Enable Section</span>
+                <Switch
+                  checked={instagramSectionEnabled}
+                  onCheckedChange={(checked) => handleToggleInstagramSection(Boolean(checked))}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Field label="Instagram Handle / Username" hint="e.g. velvetsalon">
+                <div className="flex items-center rounded-xl border border-border bg-background px-3 focus-within:border-primary">
+                  <Instagram className="mr-2 h-4 w-4 shrink-0 text-pink-500" />
+                  <span className="mr-1 text-xs text-muted-foreground">@</span>
+                  <input
+                    value={form.instagramFeed.handle || form.instagram}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/^@/, "");
+                      update("instagram", val);
+                      update("instagramFeed", { ...form.instagramFeed, handle: val });
+                    }}
+                    placeholder="yoursalon"
+                    className="h-10 w-full bg-transparent text-sm text-foreground outline-none"
+                  />
+                  {(form.instagramFeed.handle || form.instagram) && (
+                    <a
+                      href={instagramUrl(form.instagramFeed.handle || form.instagram)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+                      title="View Profile"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </Field>
+
+              <Field label="Section Title" hint="Headline shown above the feed on homepage">
+                <input
+                  value={form.instagramFeed.title}
+                  onChange={(e) => update("instagramFeed", { ...form.instagramFeed, title: e.target.value })}
+                  placeholder="Follow Us On Instagram"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Section Subtitle / Description" className="sm:col-span-2" hint="Subtitle shown under headline">
+                <input
+                  value={form.instagramFeed.subtitle}
+                  onChange={(e) => update("instagramFeed", { ...form.instagramFeed, subtitle: e.target.value })}
+                  placeholder="Latest transformations & behind the scenes"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </Panel>
+
+          {/* Posts Feed Curation */}
+          <Panel>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
+              <div>
+                <SectionHeading
+                  title="Feed Posts Grid"
+                  description="Curate the photos, captions, and engagement metrics shown in your Instagram section."
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoGenerateInstagramPosts}
+                  className="gap-1.5 text-xs"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  Auto-Fill Sample Posts
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setShowAddPost(true)}
+                  className="gap-1.5 text-xs bg-primary text-primary-foreground"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Instagram Post
+                </Button>
+              </div>
+            </div>
+
+            {/* Add New Post Form */}
+            {showAddPost && (
+              <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                  <span className="text-xs font-semibold text-foreground">Add New Instagram Post</span>
+                  <button type="button" onClick={() => setShowAddPost(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <ImageField
+                      label="Post Photo Image"
+                      value={newPostImage}
+                      onChange={(url) => setNewPostImage(url)}
+                      aspect="aspect-square"
+                      rounded="2xl"
+                      description="Upload or enter URL for post image."
+                    />
+                  </div>
+
+                  <Field label="Post Caption" className="sm:col-span-2">
+                    <textarea
+                      rows={2}
+                      value={newPostCaption}
+                      onChange={(e) => setNewPostCaption(e.target.value)}
+                      placeholder="Signature balayage & dimensional shine ✨"
+                      className={textareaClass}
+                    />
+                  </Field>
+
+                  <Field label="Likes Count">
+                    <input
+                      type="number"
+                      value={newPostLikes}
+                      onChange={(e) => setNewPostLikes(e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Comments Count">
+                    <input
+                      type="number"
+                      value={newPostComments}
+                      onChange={(e) => setNewPostComments(e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Instagram Post Link (Optional)" className="sm:col-span-2" hint="Direct permalink to post on Instagram">
+                    <input
+                      type="text"
+                      value={newPostLink}
+                      onChange={(e) => setNewPostLink(e.target.value)}
+                      placeholder="https://instagram.com/p/..."
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddPost(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" size="sm" onClick={handleAddInstagramPost}>
+                    Save Post to Feed
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Posts Grid Preview */}
+            <div className="mt-5">
+              {form.instagramFeed.posts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/80 p-8 text-center space-y-3">
+                  <Instagram className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">No posts added to your feed yet</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Click "Auto-Fill Sample Posts" to quickly populate 6 aesthetic salon photos, or click "Add Instagram Post" to add custom posts.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAutoGenerateInstagramPosts}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                    Auto-Fill Sample Posts
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                  {form.instagramFeed.posts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-background shadow-xs transition hover:border-primary/50"
+                    >
+                      <img
+                        src={post.imageUrl}
+                        alt={post.caption || "Instagram post"}
+                        className="h-full w-full object-cover"
+                      />
+
+                      <div className="absolute inset-0 flex flex-col justify-between bg-black/70 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteInstagramPost(post.id)}
+                            className="rounded-lg bg-rose-500/80 p-1 text-white hover:bg-rose-600"
+                            title="Delete Post"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        {post.caption && (
+                          <p className="line-clamp-2 text-[9px] text-white/90 leading-tight">
+                            {post.caption}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between text-[9px] text-white/80">
+                          <span className="flex items-center gap-0.5 text-rose-300">
+                            <Heart className="h-2.5 w-2.5 fill-rose-300" />
+                            {post.likesCount}
+                          </span>
+                          <span className="flex items-center gap-0.5 text-white/70">
+                            <MessageCircle className="h-2.5 w-2.5" />
+                            {post.commentsCount}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Panel>
         </div>
       )}
 
